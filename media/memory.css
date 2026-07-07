@@ -1,0 +1,112 @@
+/* Read-only live-memory panel — VS Code theme variables only (webview-ui skill). */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	padding: 0 16px 24px;
+	color: var(--vscode-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	background: var(--vscode-editor-background);
+}
+
+.panel-head {
+	position: sticky;
+	top: 0;
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 16px 0 8px;
+	background: var(--vscode-editor-background);
+	border-bottom: 1px solid var(--vscode-panel-border);
+	z-index: 1;
+}
+
+.panel-title {
+	margin: 0;
+	font-size: 1.2em;
+	font-weight: 600;
+}
+
+.panel-sub {
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.hint {
+	margin: 8px 0 0;
+	font-size: 0.9em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.mem-section {
+	margin-top: 18px;
+	padding: 10px 12px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, transparent);
+}
+
+.mem-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.mem-label {
+	font-weight: 600;
+	font-family: var(--vscode-editor-font-family, monospace);
+	word-break: break-all;
+}
+
+.counter {
+	font-variant-numeric: tabular-nums;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	white-space: nowrap;
+}
+
+.counter.over {
+	color: var(--vscode-errorForeground);
+	font-weight: 600;
+}
+
+.bar {
+	margin-top: 8px;
+	height: 6px;
+	border-radius: 3px;
+	overflow: hidden;
+	background: var(--vscode-editor-background);
+	border: 1px solid var(--vscode-panel-border);
+}
+
+.bar-fill {
+	height: 100%;
+	background: var(--vscode-charts-green, var(--vscode-progressBar-background));
+	transition: width 120ms ease-out;
+}
+
+.bar-fill.over {
+	background: var(--vscode-errorForeground);
+}
+
+.entries {
+	margin-top: 10px;
+}
+
+.entry {
+	margin: 8px 0 0;
+	padding: 8px 10px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 0.9em;
+	line-height: 1.5;
+	background: var(--vscode-editor-background);
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 4px;
+}

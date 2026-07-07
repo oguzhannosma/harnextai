@@ -5,3 +5,7 @@ media/webview.js
 media/webview.js.map
 *.vsix
 .vscode-test/
+media/transcript.js
+media/transcript.js.map
+media/memory.js
+media/memory.js.map

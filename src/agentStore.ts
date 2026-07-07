@@ -141,6 +141,54 @@ export async function readAgentForm(filePath: string): Promise<AgentFormData> {
 }
 
 /**
+ * Minimal starter content for a brand-new agent: `name`, an empty `description`,
+ * a `sonnet` model, and a short body placeholder. Built through the frontmatter
+ * serializer so it round-trips identically to what the form editor writes.
+ */
+export function agentTemplate(name: string): string {
+  const doc = parseDocument("");
+  setKey(doc, "name", name);
+  setKey(doc, "description", '""');
+  setKey(doc, "model", "sonnet");
+  doc.body = `# ${name}\n\nDescribe what this agent does and when it should be used.`;
+  return serializeDocument(doc);
+}
+
+/**
+ * Create a new agent definition file from {@link agentTemplate}. Uses the `wx`
+ * write flag so an existing file is never clobbered (belt-and-braces alongside
+ * the up-front name-collision check). Returns the absolute path written.
+ */
+export async function createAgent(
+  agentsDir: string,
+  name: string,
+): Promise<string> {
+  await fs.mkdir(agentsDir, { recursive: true });
+  const filePath = path.join(agentsDir, `${name}.md`);
+  await fs.writeFile(filePath, agentTemplate(name), { flag: "wx" });
+  return filePath;
+}
+
+/**
+ * Duplicate an existing agent file under a new name, rewriting only the
+ * frontmatter `name` field (all other keys, unknown keys, and the body are
+ * copied verbatim). `wx` guards against overwriting an existing target. Returns
+ * the absolute path of the new file.
+ */
+export async function duplicateAgent(
+  sourcePath: string,
+  agentsDir: string,
+  newName: string,
+): Promise<string> {
+  const doc = parseDocument(await fs.readFile(sourcePath, "utf8"));
+  setKey(doc, "name", newName);
+  await fs.mkdir(agentsDir, { recursive: true });
+  const filePath = path.join(agentsDir, `${newName}.md`);
+  await fs.writeFile(filePath, serializeDocument(doc), { flag: "wx" });
+  return filePath;
+}
+
+/**
  * Write edited agent form data back to disk, preserving any frontmatter keys the
  * form does not surface. The current on-disk file is re-parsed so unknown keys
  * and their order survive the round-trip (lossless per the interop safety rule).

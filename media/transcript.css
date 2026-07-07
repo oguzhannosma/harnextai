@@ -1,0 +1,103 @@
+/* Read-only transcript viewer — VS Code theme variables only (webview-ui skill). */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	padding: 0 16px 24px;
+	color: var(--vscode-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	background: var(--vscode-editor-background);
+}
+
+.panel-head {
+	position: sticky;
+	top: 0;
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 16px 0 8px;
+	background: var(--vscode-editor-background);
+	border-bottom: 1px solid var(--vscode-panel-border);
+	z-index: 1;
+}
+
+.panel-title {
+	margin: 0;
+	font-size: 1.2em;
+	font-weight: 600;
+	word-break: break-word;
+}
+
+.panel-sub {
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	white-space: nowrap;
+}
+
+.hint {
+	margin: 16px 0 0;
+	font-size: 0.9em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.notice {
+	margin: 12px 0 0;
+	padding: 6px 10px;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	background: var(--vscode-editorWidget-background, transparent);
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 4px;
+}
+
+.turns {
+	margin-top: 12px;
+}
+
+.turn {
+	margin-top: 14px;
+	padding: 8px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--vscode-panel-border);
+}
+
+.turn-user {
+	background: var(--vscode-textBlockQuote-background, var(--vscode-editorWidget-background, transparent));
+	border-left: 3px solid var(--vscode-focusBorder);
+}
+
+.turn-assistant {
+	background: var(--vscode-editor-background);
+}
+
+.turn-role {
+	margin-bottom: 6px;
+	font-size: 0.75em;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--vscode-descriptionForeground);
+}
+
+.turn-text {
+	white-space: pre-wrap;
+	word-break: break-word;
+	line-height: 1.5;
+}
+
+.turn-text + .turn-text,
+.turn-text + .tool-line,
+.tool-line + .turn-text,
+.tool-line + .tool-line {
+	margin-top: 6px;
+}
+
+.tool-line {
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 0.9em;
+	color: var(--vscode-charts-blue, var(--vscode-descriptionForeground));
+}

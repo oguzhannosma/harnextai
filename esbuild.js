@@ -22,31 +22,36 @@ const extensionOptions = {
 	logLevel: 'info',
 };
 
-/** Webview bundle (browser IIFE). Shares `src/shared/messages.ts` with the host
- * so the message protocol/validators are a single source of truth. */
-/** @type {import('esbuild').BuildOptions} */
-const webviewOptions = {
-	entryPoints: ['src/webview/main.ts'],
+/** Webview bundles (browser IIFE). Each shares `src/shared/messages.ts` with the
+ * host so the message protocol/validators are a single source of truth. One
+ * entry per webview: the form editor, the transcript viewer, the memory panel. */
+/** @param {string} entry @param {string} outfile @returns {import('esbuild').BuildOptions} */
+const webviewBundle = (entry, outfile) => ({
+	entryPoints: [entry],
 	bundle: true,
-	outfile: 'media/webview.js',
+	outfile,
 	platform: 'browser',
 	format: 'iife',
 	target: 'es2020',
 	sourcemap: !production,
 	minify: production,
 	logLevel: 'info',
-};
+});
+
+const webviewOptionsList = [
+	webviewBundle('src/webview/main.ts', 'media/webview.js'),
+	webviewBundle('src/webview/transcript.ts', 'media/transcript.js'),
+	webviewBundle('src/webview/memory.ts', 'media/memory.js'),
+];
 
 async function main() {
+	const allOptions = [extensionOptions, ...webviewOptionsList];
 	if (watch) {
-		const contexts = await Promise.all([
-			esbuild.context(extensionOptions),
-			esbuild.context(webviewOptions),
-		]);
+		const contexts = await Promise.all(allOptions.map((o) => esbuild.context(o)));
 		await Promise.all(contexts.map((ctx) => ctx.watch()));
 		console.log('esbuild: watching for changes...');
 	} else {
-		await Promise.all([esbuild.build(extensionOptions), esbuild.build(webviewOptions)]);
+		await Promise.all(allOptions.map((o) => esbuild.build(o)));
 	}
 }
 

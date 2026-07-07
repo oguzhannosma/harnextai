@@ -74,6 +74,35 @@ export async function loadSkills(
   return skills;
 }
 
+/**
+ * Minimal starter content for a new skill: `name`, an empty `description`, and a
+ * short body placeholder. Built through the frontmatter serializer so it matches
+ * what the form editor writes.
+ */
+export function skillTemplate(name: string): string {
+  const doc = parseDocument("");
+  setKey(doc, "name", name);
+  setKey(doc, "description", '""');
+  doc.body = `# ${name}\n\nDescribe when this skill applies and what it does.`;
+  return serializeDocument(doc);
+}
+
+/**
+ * Create `<skillsDir>/<name>/SKILL.md` from {@link skillTemplate}. The directory
+ * is created if needed; the `wx` write flag ensures an existing SKILL.md is never
+ * overwritten. Returns the absolute path written.
+ */
+export async function createSkill(
+  skillsDir: string,
+  name: string,
+): Promise<string> {
+  const dir = path.join(skillsDir, name);
+  await fs.mkdir(dir, { recursive: true });
+  const filePath = path.join(dir, "SKILL.md");
+  await fs.writeFile(filePath, skillTemplate(name), { flag: "wx" });
+  return filePath;
+}
+
 export async function readSkillForm(filePath: string): Promise<SkillFormData> {
   const content = await fs.readFile(filePath, "utf8");
   const doc = parseDocument(content);

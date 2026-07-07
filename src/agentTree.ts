@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { AgentDefinition, loadAgents } from "./agentStore";
 import { SkillDefinition, loadSkills } from "./skillStore";
 import { MemoryFileRef, loadMemoryFiles } from "./memoryStore";
+import { PendingProposal, loadPendingProposals } from "./pendingMemoryStore";
 import { SessionInfo, loadSessions, formatRelativeTime } from "./sessionStore";
 import { LiveSession } from "./liveSessionStore";
 import type { LiveSessionQuery } from "./liveSessionManager";
@@ -24,7 +25,7 @@ import type { FormKind } from "./shared/messages";
  * are cached and dropped wholesale on {@link refresh} (fired by file watchers).
  */
 
-type Category = "agents" | "skills" | "memories" | "sessions";
+type Category = "agents" | "skills" | "memories" | "sessions" | "approvals";
 
 interface CategoryNode {
   readonly kind: "category";
@@ -51,6 +52,15 @@ interface LiveSessionNode {
   readonly kind: "liveSession";
   readonly session: LiveSession;
 }
+/** Collapsed group at the bottom of Agents holding all archived sessions. */
+interface ArchivedGroupNode {
+  readonly kind: "archivedGroup";
+}
+/** A staged team-memory proposal awaiting human approve/reject. */
+interface PendingNode {
+  readonly kind: "pending";
+  readonly proposal: PendingProposal;
+}
 
 export type TreeNode =
   | CategoryNode
@@ -58,7 +68,9 @@ export type TreeNode =
   | SkillNode
   | MemoryNode
   | SessionNode
-  | LiveSessionNode;
+  | LiveSessionNode
+  | ArchivedGroupNode
+  | PendingNode;
 
 /** Payload passed to the `intelligents.openForm` command (see extension.ts). */
 export interface OpenFormArg {
@@ -71,6 +83,8 @@ export interface TreeSources {
   readonly skillsDir: string;
   readonly memoriesDir: string;
   readonly teamMemoryPath: string;
+  /** `.harness/team-memories/.pending/` — staged team-memory proposals. */
+  readonly pendingDir: string;
   readonly homeDir: string;
   readonly workspaceRoot: string;
 }
@@ -133,6 +147,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   private skillsPromise: Promise<SkillDefinition[]> | undefined;
   private memoriesPromise: Promise<MemoryFileRef[]> | undefined;
   private sessionsPromise: Promise<SessionInfo[]> | undefined;
+  private pendingPromise: Promise<PendingProposal[]> | undefined;
 
   constructor(
     private readonly sources: TreeSources,
@@ -146,6 +161,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     this.skillsPromise = undefined;
     this.memoriesPromise = undefined;
     this.sessionsPromise = undefined;
+    this.pendingPromise = undefined;
     this._onDidChangeTreeData.fire();
   }
 
@@ -163,17 +179,31 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
         return this.sessionItem(node);
       case "liveSession":
         return this.liveSessionItem(node);
+      case "archivedGroup":
+        return this.archivedGroupItem();
+      case "pending":
+        return this.pendingItem(node);
     }
   }
 
   async getChildren(node?: TreeNode): Promise<TreeNode[]> {
     if (!node) {
-      return [
+      const roots: TreeNode[] = [
         { kind: "category", category: "agents", label: "Agents" },
         { kind: "category", category: "skills", label: "Skills" },
         { kind: "category", category: "memories", label: "Memories" },
         { kind: "category", category: "sessions", label: "Session History" },
       ];
+      // Pending Approvals surfaces only when proposals are actually staged, so
+      // the category is invisible in the common (empty) case.
+      if ((await this.getPending()).length > 0) {
+        roots.push({
+          kind: "category",
+          category: "approvals",
+          label: "Pending Approvals",
+        });
+      }
+      return roots;
     }
 
     if (node.kind === "agent") {
@@ -185,13 +215,28 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
         );
     }
 
+    if (node.kind === "archivedGroup") {
+      return this.liveSessions
+        .getArchived()
+        .map(
+          (session) =>
+            ({ kind: "liveSession", session }) satisfies LiveSessionNode,
+        );
+    }
+
     if (node.kind === "category") {
       switch (node.category) {
-        case "agents":
-          return (await this.getAgents()).map((agent) => ({
-            kind: "agent",
-            agent,
-          }));
+        case "agents": {
+          const agentNodes: TreeNode[] = (await this.getAgents()).map(
+            (agent) => ({ kind: "agent", agent }),
+          );
+          // A single flat "Archived" group at the bottom of Agents keeps the
+          // per-agent nodes uncluttered while still surfacing kept branches.
+          if (this.liveSessions.hasArchived()) {
+            agentNodes.push({ kind: "archivedGroup" });
+          }
+          return agentNodes;
+        }
         case "skills":
           return (await this.getSkills()).map((skill) => ({
             kind: "skill",
@@ -206,6 +251,11 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
           return (await this.getSessions()).map((session) => ({
             kind: "session",
             session,
+          }));
+        case "approvals":
+          return (await this.getPending()).map((proposal) => ({
+            kind: "pending",
+            proposal,
           }));
       }
     }
@@ -226,6 +276,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
       skills: "lightbulb",
       memories: "book",
       sessions: "history",
+      approvals: "inbox",
     };
     item.iconPath = new vscode.ThemeIcon(icons[node.category]);
     return item;
@@ -233,7 +284,11 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
   private agentItem(node: AgentNode): vscode.TreeItem {
     const { agent } = node;
-    const hasSessions = this.liveSessions.getForAgent(agent.name).length > 0;
+    const live = this.liveSessions.getForAgent(agent.name);
+    const archived = this.liveSessions
+      .getArchived()
+      .filter((s) => s.agentName === agent.name);
+    const hasSessions = live.length > 0;
     const item = new vscode.TreeItem(
       agent.name,
       hasSessions
@@ -241,8 +296,19 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
         : vscode.TreeItemCollapsibleState.None,
     );
     item.description = agent.model;
+    // Session stats from the data the tree already holds — no extra scanning.
+    // `getForAgent`/`getArchived` are already newest-first, so the most recent
+    // createdAt across both lists is the "last active" moment.
+    const mostRecent = [...live, ...archived]
+      .map((s) => s.createdAt)
+      .reduce((max, t) => (t > max ? t : max), 0);
+    const stats =
+      `- Live sessions: ${live.length}\n` +
+      `- Archived sessions: ${archived.length}\n` +
+      `- Last active: ${mostRecent > 0 ? formatRelativeTime(mostRecent) : "never"}`;
     item.tooltip = new vscode.MarkdownString(
-      `**${agent.name}**${agent.model ? ` · \`${agent.model}\`` : ""}\n\n${agent.description}`,
+      `**${agent.name}**${agent.model ? ` · \`${agent.model}\`` : ""}\n\n` +
+        `${agent.description}\n\n${stats}`,
     );
     item.iconPath = new vscode.ThemeIcon("robot");
     item.contextValue = "agent";
@@ -326,6 +392,9 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
   private liveSessionItem(node: LiveSessionNode): vscode.TreeItem {
     const { session } = node;
+    if (session.archived) {
+      return this.archivedSessionItem(session);
+    }
     const status = this.sessionStatus.getStatus(session.slug);
     const badge = statusBadge(status);
     const item = new vscode.TreeItem(
@@ -351,6 +420,56 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     return item;
   }
 
+  /**
+   * An archived session: worktree gone, branch kept. Shows slug + branch so the
+   * user can locate the branch. Distinct `viewItem` ("archivedSession") so only
+   * the Delete action targets it; no reveal/open command since there is no
+   * worktree to return to.
+   */
+  private archivedSessionItem(session: LiveSession): vscode.TreeItem {
+    const item = new vscode.TreeItem(
+      session.slug,
+      vscode.TreeItemCollapsibleState.None,
+    );
+    item.description = `${session.branch} · archived ${formatRelativeTime(session.createdAt)}`;
+    item.tooltip = new vscode.MarkdownString(
+      `**Archived session** \`${session.slug}\`\n\n` +
+        `- Agent: \`${session.agentName}\`\n` +
+        `- Branch (kept): \`${session.branch}\`\n\n` +
+        `The worktree was removed. Check out \`${session.branch}\` to resume the work.`,
+    );
+    item.iconPath = new vscode.ThemeIcon("archive");
+    item.contextValue = "archivedSession";
+    return item;
+  }
+
+  private pendingItem(node: PendingNode): vscode.TreeItem {
+    const { proposal } = node;
+    const item = new vscode.TreeItem(
+      proposal.slug,
+      vscode.TreeItemCollapsibleState.None,
+    );
+    item.description = truncate(proposal.preview || "(empty proposal)");
+    item.tooltip = new vscode.MarkdownString(
+      `**Pending team-memory proposal** \`${proposal.slug}\`\n\n` +
+        `${proposal.entry || "_no durable content_"}`,
+    );
+    item.iconPath = new vscode.ThemeIcon("git-pull-request");
+    item.contextValue = "pendingProposal";
+    item.resourceUri = vscode.Uri.file(proposal.filePath);
+    return item;
+  }
+
+  private archivedGroupItem(): vscode.TreeItem {
+    const item = new vscode.TreeItem(
+      "Archived",
+      vscode.TreeItemCollapsibleState.Collapsed,
+    );
+    item.iconPath = new vscode.ThemeIcon("archive");
+    item.contextValue = "archivedGroup";
+    return item;
+  }
+
   // -- cached loaders ------------------------------------------------------
 
   private getAgents(): Promise<AgentDefinition[]> {
@@ -369,6 +488,11 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     return (this.sessionsPromise ??= loadSessions(
       this.sources.homeDir,
       this.sources.workspaceRoot,
+    ));
+  }
+  private getPending(): Promise<PendingProposal[]> {
+    return (this.pendingPromise ??= loadPendingProposals(
+      this.sources.pendingDir,
     ));
   }
 }

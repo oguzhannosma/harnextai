@@ -135,3 +135,137 @@ export function isHostMessage(v: unknown): v is HostMessage {
       return false;
   }
 }
+
+// ===========================================================================
+// Read-only visibility panels (Transcript viewer + Live memory panel).
+//
+// These two webviews are strictly one-directional for data: the extension host
+// pushes a fully-simplified view, the webview only renders it and (on load)
+// sends a single `ready`. They share the `ReadyMessage` below for the upward
+// direction; the downward direction has one host-message type each. The types
+// live here (not in the panel modules) so the webview bundles and the host both
+// validate against the same source of truth, exactly like `FormData`.
+// ===========================================================================
+
+/** The only message the read-only webviews send upward. */
+export type ReadyMessage = { readonly type: "ready" };
+
+export function isReadyMessage(v: unknown): v is ReadyMessage {
+  return isRecord(v) && v.type === "ready";
+}
+
+// -- Transcript viewer -------------------------------------------------------
+
+/** One rendered piece of an assistant turn: either prose or a compact tool
+ * marker (`⚙ ToolName`). Tool inputs/outputs are deliberately NOT carried. */
+export type TranscriptPart =
+  | { readonly kind: "text"; readonly text: string }
+  | { readonly kind: "tool"; readonly name: string };
+
+/** A single simplified turn. User turns carry only `text` parts. */
+export interface TranscriptTurn {
+  readonly role: "user" | "assistant";
+  readonly parts: readonly TranscriptPart[];
+}
+
+/** The full payload for the transcript webview — simplified turns only, never
+ * raw jsonl. `total` is the renderable-turn count before capping; `truncated`
+ * is true when `turns` is only the last-N slice of a longer transcript. */
+export interface TranscriptView {
+  readonly title: string;
+  readonly turns: readonly TranscriptTurn[];
+  readonly total: number;
+  readonly truncated: boolean;
+}
+
+export type TranscriptHostMessage = {
+  readonly type: "transcript";
+  readonly data: TranscriptView;
+};
+
+function isTranscriptPart(v: unknown): v is TranscriptPart {
+  if (!isRecord(v)) {
+    return false;
+  }
+  switch (v.kind) {
+    case "text":
+      return typeof v.text === "string";
+    case "tool":
+      return typeof v.name === "string";
+    default:
+      return false;
+  }
+}
+
+function isTranscriptTurn(v: unknown): v is TranscriptTurn {
+  return (
+    isRecord(v) &&
+    (v.role === "user" || v.role === "assistant") &&
+    Array.isArray(v.parts) &&
+    v.parts.every(isTranscriptPart)
+  );
+}
+
+export function isTranscriptView(v: unknown): v is TranscriptView {
+  return (
+    isRecord(v) &&
+    typeof v.title === "string" &&
+    typeof v.total === "number" &&
+    typeof v.truncated === "boolean" &&
+    Array.isArray(v.turns) &&
+    v.turns.every(isTranscriptTurn)
+  );
+}
+
+export function isTranscriptHostMessage(
+  v: unknown,
+): v is TranscriptHostMessage {
+  return isRecord(v) && v.type === "transcript" && isTranscriptView(v.data);
+}
+
+// -- Live memory panel -------------------------------------------------------
+
+/** One memory file rendered as a section: budget bar + entry list. */
+export interface MemoryPanelSection {
+  readonly label: string;
+  readonly filePath: string;
+  readonly budget: number;
+  readonly used: number;
+  readonly overBudget: boolean;
+  readonly entries: readonly string[];
+}
+
+export interface MemoryPanelView {
+  readonly sections: readonly MemoryPanelSection[];
+}
+
+export type MemoryPanelHostMessage = {
+  readonly type: "memory";
+  readonly data: MemoryPanelView;
+};
+
+function isMemoryPanelSection(v: unknown): v is MemoryPanelSection {
+  return (
+    isRecord(v) &&
+    typeof v.label === "string" &&
+    typeof v.filePath === "string" &&
+    typeof v.budget === "number" &&
+    typeof v.used === "number" &&
+    typeof v.overBudget === "boolean" &&
+    isStringArray(v.entries)
+  );
+}
+
+export function isMemoryPanelView(v: unknown): v is MemoryPanelView {
+  return (
+    isRecord(v) &&
+    Array.isArray(v.sections) &&
+    v.sections.every(isMemoryPanelSection)
+  );
+}
+
+export function isMemoryPanelHostMessage(
+  v: unknown,
+): v is MemoryPanelHostMessage {
+  return isRecord(v) && v.type === "memory" && isMemoryPanelView(v.data);
+}

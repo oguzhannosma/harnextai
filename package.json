@@ -44,6 +44,36 @@
         "category": "Intelligents"
       },
       {
+        "command": "intelligents.newAgent",
+        "title": "New Agent",
+        "category": "Intelligents",
+        "icon": "$(add)"
+      },
+      {
+        "command": "intelligents.newSkill",
+        "title": "New Skill",
+        "category": "Intelligents",
+        "icon": "$(add)"
+      },
+      {
+        "command": "intelligents.duplicateAgent",
+        "title": "Duplicate Agent",
+        "category": "Intelligents",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "intelligents.approveProposal",
+        "title": "Approve Proposal",
+        "category": "Intelligents",
+        "icon": "$(check)"
+      },
+      {
+        "command": "intelligents.rejectProposal",
+        "title": "Reject Proposal",
+        "category": "Intelligents",
+        "icon": "$(close)"
+      },
+      {
         "command": "intelligents.launchAgent",
         "title": "Launch Agent",
         "category": "Intelligents",
@@ -71,12 +101,72 @@
         "title": "Archive Session",
         "category": "Intelligents",
         "icon": "$(archive)"
+      },
+      {
+        "command": "intelligents.deleteSession",
+        "title": "Delete Session",
+        "category": "Intelligents",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "intelligents.sendMessage",
+        "title": "Send Message",
+        "category": "Intelligents",
+        "icon": "$(comment)"
+      },
+      {
+        "command": "intelligents.reviewSession",
+        "title": "Review Changes",
+        "category": "Intelligents",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "intelligents.mergeSession",
+        "title": "Merge & Archive Session",
+        "category": "Intelligents",
+        "icon": "$(git-merge)"
+      },
+      {
+        "command": "intelligents.openWorktree",
+        "title": "Open Worktree in New Window",
+        "category": "Intelligents",
+        "icon": "$(empty-window)"
+      },
+      {
+        "command": "intelligents.deleteHistorySession",
+        "title": "Delete Session Transcript",
+        "category": "Intelligents",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "intelligents.viewTranscript",
+        "title": "View Transcript",
+        "category": "Intelligents",
+        "icon": "$(book)"
+      },
+      {
+        "command": "intelligents.showMemoryPanel",
+        "title": "Show Memory Panel",
+        "category": "Intelligents",
+        "icon": "$(eye)"
       }
     ],
     "menus": {
       "commandPalette": [
         {
           "command": "intelligents.openForm",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.duplicateAgent",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.approveProposal",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.rejectProposal",
           "when": "false"
         },
         {
@@ -94,6 +184,34 @@
         {
           "command": "intelligents.archiveSession",
           "when": "false"
+        },
+        {
+          "command": "intelligents.deleteSession",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.sendMessage",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.reviewSession",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.mergeSession",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.openWorktree",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.deleteHistorySession",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.viewTranscript",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -105,9 +223,34 @@
       ],
       "view/item/context": [
         {
+          "command": "intelligents.newAgent",
+          "when": "view == intelligents.agentsView && viewItem == category:agents",
+          "group": "inline"
+        },
+        {
+          "command": "intelligents.newSkill",
+          "when": "view == intelligents.agentsView && viewItem == category:skills",
+          "group": "inline"
+        },
+        {
           "command": "intelligents.launchAgent",
           "when": "view == intelligents.agentsView && viewItem == agent",
           "group": "navigation@1"
+        },
+        {
+          "command": "intelligents.duplicateAgent",
+          "when": "view == intelligents.agentsView && viewItem == agent",
+          "group": "modify@1"
+        },
+        {
+          "command": "intelligents.approveProposal",
+          "when": "view == intelligents.agentsView && viewItem == pendingProposal",
+          "group": "inline@1"
+        },
+        {
+          "command": "intelligents.rejectProposal",
+          "when": "view == intelligents.agentsView && viewItem == pendingProposal",
+          "group": "inline@2"
         },
         {
           "command": "intelligents.newSession",
@@ -117,7 +260,52 @@
         {
           "command": "intelligents.archiveSession",
           "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "group": "navigation@1"
+        },
+        {
+          "command": "intelligents.deleteSession",
+          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "group": "navigation@2"
+        },
+        {
+          "command": "intelligents.reviewSession",
+          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "group": "review@1"
+        },
+        {
+          "command": "intelligents.mergeSession",
+          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "group": "review@2"
+        },
+        {
+          "command": "intelligents.sendMessage",
+          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "group": "session@1"
+        },
+        {
+          "command": "intelligents.openWorktree",
+          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "group": "session@2"
+        },
+        {
+          "command": "intelligents.deleteSession",
+          "when": "view == intelligents.agentsView && viewItem == archivedSession",
           "group": "navigation"
+        },
+        {
+          "command": "intelligents.deleteHistorySession",
+          "when": "view == intelligents.agentsView && viewItem == session",
+          "group": "inline"
+        },
+        {
+          "command": "intelligents.viewTranscript",
+          "when": "view == intelligents.agentsView && viewItem == session",
+          "group": "navigation@1"
+        },
+        {
+          "command": "intelligents.showMemoryPanel",
+          "when": "view == intelligents.agentsView && viewItem == category:memories",
+          "group": "inline"
         }
       ]
     }

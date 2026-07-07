@@ -195,6 +195,52 @@ export async function loadSessions(
   return sessions;
 }
 
+/**
+ * Permanently delete one session's transcript files under `~/.claude`: the
+ * `<uuid>.jsonl` transcript and, if present, its sibling `<uuid>/` directory
+ * (Claude Code sometimes keeps per-session attachments/state there). This is the
+ * single sanctioned exception to the never-delete-under-`~/.claude` rule — a user
+ * explicitly acted on this exact session — so the path shape is asserted first:
+ * the file MUST live under `~/.claude/projects/` and be named `<sessionId>.jsonl`.
+ * Any other shape throws rather than deleting. Nothing outside this session's own
+ * files is ever touched.
+ *
+ * Pure Node (no `vscode`).
+ */
+export async function deleteHistorySession(
+  homeDir: string,
+  filePath: string,
+  sessionId: string,
+): Promise<void> {
+  const projectsRoot = path.resolve(path.join(homeDir, ".claude", "projects"));
+  const resolved = path.resolve(filePath);
+  const withinProjects =
+    resolved === projectsRoot || resolved.startsWith(projectsRoot + path.sep);
+  if (!withinProjects) {
+    throw new Error(
+      `Refusing to delete: ${resolved} is not under ${projectsRoot}`,
+    );
+  }
+  if (path.basename(resolved) !== `${sessionId}.jsonl`) {
+    throw new Error(
+      `Refusing to delete: ${resolved} does not match session id ${sessionId}`,
+    );
+  }
+
+  await fs.rm(resolved, { force: true });
+
+  // Sibling per-session directory named exactly <uuid>, if one exists.
+  const siblingDir = path.join(path.dirname(resolved), sessionId);
+  try {
+    const stat = await fs.stat(siblingDir);
+    if (stat.isDirectory()) {
+      await fs.rm(siblingDir, { recursive: true, force: true });
+    }
+  } catch {
+    // No sibling directory — nothing else to remove.
+  }
+}
+
 /** Human-friendly relative time like "3m ago", "2h ago", "5d ago". */
 export function formatRelativeTime(
   ms: number,
