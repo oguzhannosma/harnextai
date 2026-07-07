@@ -1,0 +1,7 @@
+# lint-staged needs project tooling (eslint/prettier) which arrives with the
+# extension scaffold; no-op until a tsconfig exists so early commits aren't blocked.
+if [ -f tsconfig.json ]; then
+  npx --no -- lint-staged
+else
+  echo "pre-commit: no tsconfig.json yet, skipping lint-staged"
+fi

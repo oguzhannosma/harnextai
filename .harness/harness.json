@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "tools": {
+    "claude": true,
+    "cursor": false,
+    "codex": false,
+    "copilot": true,
+    "antigravity": false
+  },
+  "agents": ["developer", "indexer", "researcher", "reviewer"],
+  "settings": {
+    "model": "inherit",
+    "personalMemoryBudget": 2200,
+    "teamMemoryBudget": 4000
+  },
+  "x-harness-architect": {
+    "project": {
+      "name": "intelligents",
+      "description": "VS Code extension (TypeScript): agentic CRM for AI coding agents, integrating Claude Code and GitHub Copilot",
+      "stack": ["typescript", "vscode-extension", "esbuild"]
+    },
+    "agentModels": {
+      "indexer": "haiku",
+      "researcher": "sonnet",
+      "developer": "opus",
+      "reviewer": "opus"
+    },
+    "skills": [
+      "harness-manifest",
+      "vscode-extension-dev",
+      "webview-ui",
+      "agent-runtime-interop"
+    ],
+    "commands": ["index", "approve-memories"],
+    "hooks": {
+      "framework": "husky",
+      "dir": ".husky",
+      "files": ["commit-msg", "pre-commit", "pre-push", "post-merge"],
+      "commitConvention": "conventional-commits"
+    },
+    "bridges": {
+      "copilot": {
+        "file": ".github/copilot-instructions.md",
+        "generator": ".harness/scripts/sync-copilot.ts"
+      }
+    },
+    "dashboard": {
+      "dir": ".harness/dashboard",
+      "runtime": "bun",
+      "run": "npm run harness:dashboard",
+      "url": "http://127.0.0.1:5175"
+    },
+    "ci": null,
+    "mcp": []
+  }
+}

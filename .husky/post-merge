@@ -1,0 +1,5 @@
+sh .harness/scripts/check-index-staleness.sh || true
+# Keep the Copilot bridge in sync with team memory / index after pulls.
+if command -v bun >/dev/null 2>&1; then
+  bun .harness/scripts/sync-copilot.ts || true
+fi

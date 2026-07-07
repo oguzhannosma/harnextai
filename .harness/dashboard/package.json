@@ -1,0 +1,15 @@
+{
+  "name": "harness-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build && bun server.ts",
+    "build": "vite build",
+    "start": "bun server.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vite": "^6.3.0"
+  }
+}

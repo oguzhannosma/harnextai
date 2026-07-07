@@ -1,0 +1,197 @@
+/* Editor webview styling — VS Code theme variables only, no hardcoded palette,
+ * so it tracks the user's active theme (webview-ui skill). */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	padding: 0 16px 24px;
+	color: var(--vscode-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	background: var(--vscode-editor-background);
+}
+
+.panel-head {
+	position: sticky;
+	top: 0;
+	padding: 16px 0 8px;
+	background: var(--vscode-editor-background);
+	border-bottom: 1px solid var(--vscode-panel-border);
+	z-index: 1;
+}
+
+.panel-title {
+	margin: 0;
+	font-size: 1.3em;
+	font-weight: 600;
+}
+
+.panel-path {
+	display: block;
+	margin-top: 4px;
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+	word-break: break-all;
+}
+
+.field {
+	margin-top: 16px;
+}
+
+.field-label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 600;
+}
+
+.field-label.inline {
+	display: inline;
+	margin: 0 0 0 6px;
+}
+
+.checkbox-field {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.checkbox-field .hint {
+	flex-basis: 100%;
+}
+
+.hint {
+	margin: 4px 0 0;
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.text-input,
+.textarea {
+	width: 100%;
+	padding: 6px 8px;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 2px;
+	font-family: inherit;
+	font-size: inherit;
+}
+
+.textarea {
+	resize: vertical;
+	font-family: var(--vscode-editor-font-family, monospace);
+	line-height: 1.5;
+}
+
+.textarea.body {
+	min-height: 260px;
+}
+
+.text-input:focus,
+.textarea:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.footer {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 20px;
+	padding-top: 12px;
+	border-top: 1px solid var(--vscode-panel-border);
+}
+
+.btn {
+	padding: 5px 14px;
+	color: var(--vscode-button-secondaryForeground);
+	background: var(--vscode-button-secondaryBackground);
+	border: none;
+	border-radius: 2px;
+	font-family: inherit;
+	font-size: inherit;
+	cursor: pointer;
+}
+
+.btn:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.btn-primary {
+	color: var(--vscode-button-foreground);
+	background: var(--vscode-button-background);
+}
+
+.btn-primary:hover {
+	background: var(--vscode-button-hoverBackground);
+}
+
+.btn-ghost {
+	background: transparent;
+	color: var(--vscode-descriptionForeground);
+	padding: 2px 8px;
+}
+
+.btn-ghost:hover {
+	background: var(--vscode-toolbar-hoverBackground);
+	color: var(--vscode-foreground);
+}
+
+.status {
+	font-size: 0.9em;
+}
+
+.status-ok {
+	color: var(--vscode-charts-green, var(--vscode-descriptionForeground));
+}
+
+.status-error {
+	color: var(--vscode-errorForeground);
+}
+
+/* Memory editor */
+.memory-meta {
+	margin-top: 12px;
+}
+
+.counter {
+	font-variant-numeric: tabular-nums;
+	color: var(--vscode-descriptionForeground);
+}
+
+.counter.over {
+	color: var(--vscode-errorForeground);
+	font-weight: 600;
+}
+
+.entries {
+	margin-top: 8px;
+}
+
+.entry-row {
+	margin-top: 12px;
+	padding: 8px;
+	background: var(--vscode-editorWidget-background, transparent);
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 4px;
+}
+
+.entry-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+
+.entry-num {
+	font-size: 0.85em;
+	color: var(--vscode-descriptionForeground);
+}
+
+.memory-actions {
+	margin-top: 12px;
+}

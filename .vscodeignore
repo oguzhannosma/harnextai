@@ -1,0 +1,17 @@
+.vscode/**
+.vscode-test/**
+src/**
+.harness/**
+.claude/**
+.github/**
+.husky/**
+docs/**
+node_modules/**
+.gitignore
+.lintstagedrc.json
+commitlint.config.cjs
+esbuild.js
+tsconfig.json
+package-lock.json
+*.vsix
+**/.git/**

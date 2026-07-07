@@ -1,0 +1,7 @@
+# Run tests before pushing, but only once a real test script exists.
+if node -e "const s=require('./package.json').scripts||{};process.exit(s.test?0:1)"; then
+  npm test
+else
+  echo "pre-push: no test script yet, skipping"
+fi
+sh .harness/scripts/check-index-staleness.sh || true

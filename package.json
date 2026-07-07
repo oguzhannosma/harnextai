@@ -1,0 +1,148 @@
+{
+  "name": "intelligents",
+  "version": "0.0.0",
+  "private": true,
+  "publisher": "local",
+  "description": "Agentic CRM for VS Code — manage persistent AI coding agents, their skills, and memory. Integrates with Claude Code and GitHub Copilot.",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:intelligents.agentsView"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "intelligents",
+          "title": "Intelligents",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "intelligents": [
+        {
+          "id": "intelligents.agentsView",
+          "name": "Agents",
+          "icon": "media/icon.svg",
+          "contextualTitle": "Intelligents"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "intelligents.refresh",
+        "title": "Refresh",
+        "category": "Intelligents",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "intelligents.openForm",
+        "title": "Edit",
+        "category": "Intelligents"
+      },
+      {
+        "command": "intelligents.launchAgent",
+        "title": "Launch Agent",
+        "category": "Intelligents",
+        "icon": "$(play)"
+      },
+      {
+        "command": "intelligents.resumeSession",
+        "title": "Resume Session",
+        "category": "Intelligents",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "intelligents.newSession",
+        "title": "New Session",
+        "category": "Intelligents",
+        "icon": "$(add)"
+      },
+      {
+        "command": "intelligents.revealSession",
+        "title": "Open Session",
+        "category": "Intelligents"
+      },
+      {
+        "command": "intelligents.archiveSession",
+        "title": "Archive Session",
+        "category": "Intelligents",
+        "icon": "$(archive)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "intelligents.openForm",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.launchAgent",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.resumeSession",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.revealSession",
+          "when": "false"
+        },
+        {
+          "command": "intelligents.archiveSession",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "intelligents.refresh",
+          "when": "view == intelligents.agentsView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "intelligents.launchAgent",
+          "when": "view == intelligents.agentsView && viewItem == agent",
+          "group": "navigation@1"
+        },
+        {
+          "command": "intelligents.newSession",
+          "when": "view == intelligents.agentsView && viewItem == agent",
+          "group": "navigation@2"
+        },
+        {
+          "command": "intelligents.archiveSession",
+          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "prepare": "husky",
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package",
+    "harness:dashboard": "bun run --cwd .harness/dashboard dev",
+    "harness:sync-copilot": "bun .harness/scripts/sync-copilot.ts"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@types/node": "^20.19.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.23.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.9.4",
+    "typescript": "^5.6.3"
+  }
+}
