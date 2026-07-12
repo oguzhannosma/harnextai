@@ -28,6 +28,11 @@
     "workflow",
     "ai"
   ],
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#5B2A9E",
+    "theme": "dark"
+  },
   "main": "./dist/extension.js",
   "activationEvents": [
     "onView:harnextai.agentsView",
@@ -42,7 +47,7 @@
         {
           "id": "harnextai",
           "title": "Harnext AI",
-          "icon": "media/icon.svg"
+          "icon": "media/icon.png"
         }
       ]
     },
@@ -51,34 +56,34 @@
         {
           "id": "harnextai.agentsView",
           "name": "Agents",
-          "icon": "media/icon.svg",
+          "icon": "media/icon.png",
           "contextualTitle": "Harnext AI"
         },
         {
           "id": "harnextai.workflowView",
           "name": "Workflow",
           "type": "webview",
-          "icon": "media/icon.svg",
+          "icon": "media/icon.png",
           "contextualTitle": "Harnext AI"
         },
         {
           "id": "harnextai.workflowSessionsView",
           "name": "Sessions",
           "type": "webview",
-          "icon": "media/icon.svg",
+          "icon": "media/icon.png",
           "contextualTitle": "Harnext AI"
         },
         {
           "id": "harnextai.workflowIssuesView",
           "name": "Issues",
-          "icon": "media/icon.svg",
+          "icon": "media/icon.png",
           "contextualTitle": "Harnext AI"
         },
         {
           "id": "harnextai.harnessDoctorView",
           "name": "Doctor",
           "type": "webview",
-          "icon": "media/icon.svg",
+          "icon": "media/icon.png",
           "contextualTitle": "Harnext AI"
         }
       ]

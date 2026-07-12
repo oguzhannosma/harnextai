@@ -1,5 +1,7 @@
 # Harnext AI
 
+<img src="media/icon.png" alt="Harnext AI" width="128" height="128" />
+
 VS Code / Cursor extension for managing a project **harness** — agents, skills, memory, Doctor sync, and ticket workflows that run with Claude Code or the Cursor CLI.
 
 **Repository:** [github.com/oguzhannosma/harnextai](https://github.com/oguzhannosma/harnextai)
