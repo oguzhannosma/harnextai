@@ -195,3 +195,116 @@ body {
 .memory-actions {
 	margin-top: 12px;
 }
+
+/* Markdown body Text | Preview */
+.md-body-field {
+	margin-top: 16px;
+}
+
+.entry-row .md-body-field {
+	margin-top: 0;
+}
+
+.md-tabs {
+	display: flex;
+	gap: 0;
+	margin-bottom: 6px;
+	border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.md-tab {
+	padding: 4px 12px;
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	background: transparent;
+	border: none;
+	border-bottom: 2px solid transparent;
+	font-family: inherit;
+	font-size: 0.9em;
+	cursor: pointer;
+}
+
+.md-tab:hover {
+	color: var(--vscode-foreground);
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.md-tab.active {
+	color: var(--vscode-foreground);
+	border-bottom-color: var(--vscode-focusBorder);
+	font-weight: 600;
+}
+
+.md-preview {
+	min-height: 120px;
+	padding: 10px 12px;
+	color: var(--vscode-foreground);
+	background: var(--vscode-editor-background);
+	border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+	border-radius: 2px;
+	line-height: 1.55;
+	overflow-wrap: anywhere;
+}
+
+.md-preview .md-empty {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	font-style: italic;
+}
+
+.md-preview .md-heading {
+	margin: 0.8em 0 0.35em;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.md-preview .md-heading:first-child {
+	margin-top: 0;
+}
+
+.md-preview .md-p {
+	margin: 0 0 0.75em;
+}
+
+.md-preview .md-p:last-child {
+	margin-bottom: 0;
+}
+
+.md-preview .md-list {
+	margin: 0 0 0.75em;
+	padding-left: 1.4em;
+}
+
+.md-preview .md-codeblock {
+	margin: 0 0 0.75em;
+	padding: 8px 10px;
+	overflow-x: auto;
+	background: var(--vscode-textCodeBlock-background, var(--vscode-editorWidget-background));
+	border-radius: 2px;
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 0.9em;
+	line-height: 1.45;
+}
+
+.md-preview .md-inline-code {
+	padding: 0 4px;
+	background: var(--vscode-textCodeBlock-background, var(--vscode-editorWidget-background));
+	border-radius: 2px;
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 0.9em;
+}
+
+.md-preview .md-file-link {
+	color: var(--vscode-textLink-foreground);
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.md-preview .md-file-link:hover {
+	color: var(--vscode-textLink-activeForeground);
+}
+
+.md-preview .md-link-text {
+	color: var(--vscode-textLink-foreground);
+}
+

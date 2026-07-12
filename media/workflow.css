@@ -1,0 +1,488 @@
+/* Workflow graph — compact icon nodes, VS Code theme tokens */
+
+body {
+  margin: 0;
+  padding: 12px 10px 20px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+  line-height: 1.45;
+}
+
+.hint {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.92em;
+  margin: 8px 0;
+}
+
+.hint.error {
+  color: var(--vscode-errorForeground);
+}
+
+.flow-head {
+  margin-bottom: 14px;
+}
+
+.flow-title {
+  margin: 0 0 6px;
+  font-size: 0.75em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+
+.flow-trigger {
+  margin: 0;
+  font-size: 0.82em;
+  color: var(--vscode-foreground);
+  padding: 8px 10px;
+  border-left: 3px solid var(--vscode-textLink-foreground);
+  background: var(--vscode-editor-inactiveSelectionBackground);
+  line-height: 1.35;
+}
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.step-node {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border));
+  border-radius: 6px;
+  background: var(--vscode-editor-background);
+  isolation: isolate;
+}
+
+.step-node--gate {
+  border-style: dashed;
+  background: var(--vscode-input-background);
+}
+
+/* Traveling border — rotating conic highlight around the active step */
+@property --travel-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes travelBorder {
+  to {
+    --travel-angle: 360deg;
+  }
+}
+
+.step-node--active {
+  border-color: transparent;
+}
+
+.step-node--active::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--travel-angle),
+    var(--vscode-textLink-foreground),
+    var(--vscode-charts-blue, #3794ff),
+    var(--vscode-charts-purple, #b180d7),
+    var(--vscode-charts-blue, #3794ff),
+    var(--vscode-textLink-foreground)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: travelBorder 2s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.step-node--waiting.step-node--active::before {
+  background: conic-gradient(
+    from var(--travel-angle),
+    var(--vscode-editorWarning-foreground, #cca700),
+    color-mix(in srgb, var(--vscode-editorWarning-foreground, #cca700) 35%, white),
+    var(--vscode-editorWarning-foreground, #cca700),
+    transparent 55%,
+    var(--vscode-editorWarning-foreground, #cca700)
+  );
+  animation-duration: 1.6s;
+}
+
+.step-node--done.step-node--active::before {
+  background: conic-gradient(
+    from var(--travel-angle),
+    var(--vscode-testing-iconPassed, #73c991),
+    color-mix(in srgb, var(--vscode-testing-iconPassed, #73c991) 40%, white),
+    var(--vscode-testing-iconPassed, #73c991),
+    transparent 55%,
+    var(--vscode-testing-iconPassed, #73c991)
+  );
+  animation-duration: 2.4s;
+}
+
+.step-node--blocked.step-node--active::before {
+  background: conic-gradient(
+    from var(--travel-angle),
+    var(--vscode-errorForeground),
+    color-mix(in srgb, var(--vscode-errorForeground) 40%, white),
+    var(--vscode-errorForeground),
+    transparent 55%,
+    var(--vscode-errorForeground)
+  );
+  animation-duration: 1.2s;
+}
+
+.step-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.step-head:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.step-head:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.step-icon-svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--vscode-foreground);
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.step-node--gate .step-icon-svg {
+  stroke: var(--vscode-descriptionForeground);
+}
+
+.step-node--active .step-icon-svg {
+  stroke: var(--vscode-textLink-foreground);
+}
+
+.step-label {
+  font-size: 0.78em;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+  word-break: break-word;
+}
+
+.step-node--active .step-label {
+  color: var(--vscode-foreground);
+}
+
+.step-detail {
+  margin: 0;
+  padding: 0 10px 10px;
+  font-size: 0.8em;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+  border-top: 1px solid var(--vscode-panel-border, var(--vscode-widget-border));
+  padding-top: 8px;
+}
+
+.step-elapsed {
+  font-size: 0.7em;
+  font-weight: 500;
+  color: var(--vscode-textLink-foreground);
+}
+
+.step-node--complete {
+  border-color: color-mix(
+    in srgb,
+    var(--vscode-testing-iconPassed, #73c991) 55%,
+    var(--vscode-panel-border)
+  );
+  opacity: 0.92;
+}
+
+.step-node--complete .step-icon-svg {
+  stroke: var(--vscode-testing-iconPassed, #73c991);
+}
+
+.step-node--complete .step-label {
+  color: var(--vscode-foreground);
+}
+
+.flow-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.95em;
+  line-height: 1;
+  padding: 2px 0 4px;
+  user-select: none;
+  opacity: 0.45;
+}
+
+.flow-connector-line {
+  display: block;
+  width: 2px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--vscode-descriptionForeground);
+  opacity: 0.5;
+}
+
+.flow-connector--lit {
+  color: var(--vscode-testing-iconPassed, #73c991);
+  opacity: 1;
+}
+
+.flow-connector--lit .flow-connector-line {
+  background: var(--vscode-testing-iconPassed, #73c991);
+  opacity: 1;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--vscode-testing-iconPassed, #73c991) 60%, transparent);
+}
+
+.flow-connector--active {
+  color: var(--vscode-textLink-foreground);
+  opacity: 1;
+  animation: connectorPulse 1.4s ease-in-out infinite;
+}
+
+.flow-connector--active .flow-connector-line {
+  background: var(--vscode-textLink-foreground);
+  opacity: 1;
+}
+
+@keyframes connectorPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Sticky mission header */
+.sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: -12px -10px 12px;
+  padding: 10px 12px 12px;
+  background: color-mix(in srgb, var(--vscode-sideBar-background) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-widget-border));
+}
+
+.sticky-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sticky-kicker {
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+
+.sticky-issue {
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--vscode-foreground);
+}
+
+.sticky-issue.muted {
+  font-weight: 500;
+  color: var(--vscode-descriptionForeground);
+}
+
+.sticky-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sticky-step {
+  font-size: 0.78em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.sticky-elapsed {
+  font-size: 0.75em;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-textLink-foreground);
+}
+
+.status-pill {
+  font-size: 0.7em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.status-pill--active {
+  color: var(--vscode-textLink-foreground);
+  border-color: var(--vscode-textLink-foreground);
+}
+
+.status-pill--waiting-user {
+  color: var(--vscode-editorWarning-foreground, #cca700);
+  border-color: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.status-pill--done {
+  color: var(--vscode-testing-iconPassed, #73c991);
+  border-color: var(--vscode-testing-iconPassed, #73c991);
+}
+
+.status-pill--blocked {
+  color: var(--vscode-errorForeground);
+  border-color: var(--vscode-errorForeground);
+}
+
+.flow-trigger {
+  margin: 0 0 14px;
+}
+
+/* Waiting-on-you card */
+.waiting-card {
+  margin: 0 0 14px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--vscode-editorWarning-foreground, #cca700);
+  background: color-mix(
+    in srgb,
+    var(--vscode-editorWarning-foreground, #cca700) 12%,
+    var(--vscode-editor-background)
+  );
+  animation: waitingGlow 2s ease-in-out infinite;
+}
+
+@keyframes waitingGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--vscode-editorWarning-foreground, #cca700) 25%, transparent);
+  }
+}
+
+.waiting-title {
+  margin: 0 0 6px;
+  font-size: 0.95em;
+}
+
+.waiting-body {
+  margin: 0 0 10px;
+  font-size: 0.82em;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+}
+
+.waiting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.waiting-btn {
+  font: inherit;
+  font-size: 0.8em;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-button-secondaryBorder, var(--vscode-panel-border));
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+}
+
+.waiting-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.waiting-btn--primary {
+  border-color: transparent;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.waiting-btn--primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.done-banner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  background: color-mix(
+    in srgb,
+    var(--vscode-testing-iconPassed, #73c991) 14%,
+    var(--vscode-editor-background)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--vscode-testing-iconPassed, #73c991) 50%, transparent);
+}
+
+/* Confetti */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -8px;
+  width: 6px;
+  height: 10px;
+  border-radius: 1px;
+  animation: confettiFall 2.4s ease-in forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 20px), 110vh, 0) rotate(540deg);
+    opacity: 0;
+  }
+}

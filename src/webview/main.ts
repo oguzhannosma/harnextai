@@ -16,6 +16,7 @@ import {
   MemoryFormData,
   isHostMessage,
 } from "../shared/messages";
+import { markdownBodyField } from "./markdownBody";
 
 interface VsCodeApi {
   postMessage(message: unknown): void;
@@ -31,6 +32,10 @@ let current: FormData | null = null;
 /** Working copy of memory entries (mutated as the user adds/removes blocks). */
 let memoryEntries: string[] = [];
 
+function openFile(path: string): void {
+  vscode.postMessage({ type: "openFile", path });
+}
+
 // Restore any state VS Code retained across a reload before the host replies.
 const saved = vscode.getState();
 if (saved && typeof saved === "object") {
@@ -41,7 +46,7 @@ if (saved && typeof saved === "object") {
 window.addEventListener("message", (event: MessageEvent) => {
   const message: unknown = event.data;
   if (!isHostMessage(message)) {
-    console.warn("intelligents webview: dropped invalid host message", message);
+    console.warn("harnextai webview: dropped invalid host message", message);
     return;
   }
   handle(message);
@@ -146,11 +151,11 @@ function renderAgent(data: AgentFormData): void {
     type: "text",
     value: data.tools,
   });
-  const body = el("textarea", {
-    className: "textarea body",
-    rows: 18,
-    value: data.body,
-  });
+  const body = markdownBodyField(
+    "System prompt (markdown body)",
+    data.body,
+    openFile,
+  );
 
   const save = saveButton(() => {
     const next: AgentFormData = {
@@ -160,7 +165,7 @@ function renderAgent(data: AgentFormData): void {
       description: description.value,
       model: model.value,
       tools: tools.value,
-      body: body.value,
+      body: body.textarea.value,
     };
     submit(next);
   });
@@ -171,7 +176,7 @@ function renderAgent(data: AgentFormData): void {
     field("description", description),
     field("model", model, "e.g. opus, sonnet, haiku"),
     field("tools", tools, "Comma-separated; leave blank to inherit all tools."),
-    field("System prompt (markdown body)", body),
+    body.root,
     footer(save),
   );
 }
@@ -189,11 +194,7 @@ function renderSkill(data: SkillFormData): void {
   });
   const disable = el("input", { type: "checkbox" });
   disable.checked = data.disableModelInvocation;
-  const body = el("textarea", {
-    className: "textarea body",
-    rows: 18,
-    value: data.body,
-  });
+  const body = markdownBodyField("Skill body (markdown)", data.body, openFile);
 
   const disableField = el("div", { className: "field checkbox-field" }, [
     disable,
@@ -212,7 +213,7 @@ function renderSkill(data: SkillFormData): void {
       name: name.value,
       description: description.value,
       disableModelInvocation: disable.checked,
-      body: body.value,
+      body: body.textarea.value,
     };
     submit(next);
   });
@@ -222,7 +223,7 @@ function renderSkill(data: SkillFormData): void {
     field("name", name),
     field("description", description),
     disableField,
-    field("Skill body (markdown)", body),
+    body.root,
     footer(save),
   );
 }
@@ -242,13 +243,12 @@ function renderMemory(data: MemoryFormData): void {
   const rebuild = (): void => {
     list.textContent = "";
     memoryEntries.forEach((entry, index) => {
-      const area = el("textarea", {
-        className: "textarea entry",
+      const body = markdownBodyField("", entry, openFile, {
         rows: 4,
-        value: entry,
+        className: "textarea entry",
       });
-      area.addEventListener("input", () => {
-        memoryEntries[index] = area.value;
+      body.textarea.addEventListener("input", () => {
+        memoryEntries[index] = body.textarea.value;
         recount();
       });
       const remove = el(
@@ -267,7 +267,7 @@ function renderMemory(data: MemoryFormData): void {
             el("span", { className: "entry-num" }, [`Entry ${index + 1}`]),
             remove,
           ]),
-          area,
+          body.root,
         ]),
       );
     });

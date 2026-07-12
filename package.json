@@ -1,311 +1,488 @@
 {
-  "name": "intelligents",
-  "version": "0.0.0",
-  "private": true,
-  "publisher": "local",
-  "description": "Agentic CRM for VS Code — manage persistent AI coding agents, their skills, and memory. Integrates with Claude Code and GitHub Copilot.",
+  "name": "harnextai",
+  "displayName": "Harnext AI",
+  "version": "1.0.0",
+  "publisher": "oguzhannosma",
+  "description": "Harness for AI coding agents — manage agents, skills, memory, and ticket workflows across Claude Code and Cursor.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oguzhannosma/harnextai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oguzhannosma/harnextai/issues"
+  },
+  "homepage": "https://github.com/oguzhannosma/harnextai#readme",
   "engines": {
     "vscode": "^1.90.0"
   },
+  "categories": [
+    "Other",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "harness",
+    "agents",
+    "claude",
+    "cursor",
+    "workflow",
+    "ai"
+  ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onView:intelligents.agentsView"
+    "onView:harnextai.agentsView",
+    "onView:harnextai.workflowView",
+    "onView:harnextai.workflowIssuesView",
+    "onView:harnextai.workflowSessionsView",
+    "onView:harnextai.harnessDoctorView"
   ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "intelligents",
-          "title": "Intelligents",
+          "id": "harnextai",
+          "title": "Harnext AI",
           "icon": "media/icon.svg"
         }
       ]
     },
     "views": {
-      "intelligents": [
+      "harnextai": [
         {
-          "id": "intelligents.agentsView",
+          "id": "harnextai.agentsView",
           "name": "Agents",
           "icon": "media/icon.svg",
-          "contextualTitle": "Intelligents"
+          "contextualTitle": "Harnext AI"
+        },
+        {
+          "id": "harnextai.workflowView",
+          "name": "Workflow",
+          "type": "webview",
+          "icon": "media/icon.svg",
+          "contextualTitle": "Harnext AI"
+        },
+        {
+          "id": "harnextai.workflowSessionsView",
+          "name": "Sessions",
+          "type": "webview",
+          "icon": "media/icon.svg",
+          "contextualTitle": "Harnext AI"
+        },
+        {
+          "id": "harnextai.workflowIssuesView",
+          "name": "Issues",
+          "icon": "media/icon.svg",
+          "contextualTitle": "Harnext AI"
+        },
+        {
+          "id": "harnextai.harnessDoctorView",
+          "name": "Doctor",
+          "type": "webview",
+          "icon": "media/icon.svg",
+          "contextualTitle": "Harnext AI"
         }
       ]
     },
+    "configuration": {
+      "title": "Harnext AI",
+      "properties": {
+        "harnextai.workflow.useDefaultRuntime": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, Trigger Workflow uses the default runtime with no prompt. When false, show a picker (Claude Code / Cursor CLI) each time."
+        },
+        "harnextai.workflow.defaultRuntime": {
+          "type": "string",
+          "enum": [
+            "claude",
+            "cursor"
+          ],
+          "enumDescriptions": [
+            "Claude Code CLI (claude)",
+            "Cursor CLI (agent)"
+          ],
+          "default": "claude",
+          "description": "Which CLI to run for Trigger Workflow when using the default (also the pre-selected option in the picker). Also used when launching harness-architect for New Agent / New Skill."
+        },
+        "harnextai.workflow.notifyOnAttention": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, show an OS/VS Code notification when a workflow session becomes waiting-user or blocked."
+        }
+      }
+    },
     "commands": [
       {
-        "command": "intelligents.refresh",
+        "command": "harnextai.refresh",
         "title": "Refresh",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(refresh)"
       },
       {
-        "command": "intelligents.openForm",
+        "command": "harnextai.openForm",
         "title": "Edit",
-        "category": "Intelligents"
+        "category": "Harnext AI"
       },
       {
-        "command": "intelligents.newAgent",
+        "command": "harnextai.newAgent",
         "title": "New Agent",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(add)"
       },
       {
-        "command": "intelligents.newSkill",
+        "command": "harnextai.newSkill",
         "title": "New Skill",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(add)"
       },
       {
-        "command": "intelligents.duplicateAgent",
+        "command": "harnextai.duplicateAgent",
         "title": "Duplicate Agent",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(copy)"
       },
       {
-        "command": "intelligents.approveProposal",
+        "command": "harnextai.approveProposal",
         "title": "Approve Proposal",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(check)"
       },
       {
-        "command": "intelligents.rejectProposal",
+        "command": "harnextai.rejectProposal",
         "title": "Reject Proposal",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(close)"
       },
       {
-        "command": "intelligents.launchAgent",
+        "command": "harnextai.launchAgent",
         "title": "Launch Agent",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(play)"
       },
       {
-        "command": "intelligents.resumeSession",
+        "command": "harnextai.resumeSession",
         "title": "Resume Session",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(debug-restart)"
       },
       {
-        "command": "intelligents.newSession",
+        "command": "harnextai.newSession",
         "title": "New Session",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(add)"
       },
       {
-        "command": "intelligents.revealSession",
+        "command": "harnextai.revealSession",
         "title": "Open Session",
-        "category": "Intelligents"
+        "category": "Harnext AI"
       },
       {
-        "command": "intelligents.archiveSession",
+        "command": "harnextai.archiveSession",
         "title": "Archive Session",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(archive)"
       },
       {
-        "command": "intelligents.deleteSession",
+        "command": "harnextai.deleteSession",
         "title": "Delete Session",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(trash)"
       },
       {
-        "command": "intelligents.sendMessage",
+        "command": "harnextai.sendMessage",
         "title": "Send Message",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(comment)"
       },
       {
-        "command": "intelligents.reviewSession",
+        "command": "harnextai.reviewSession",
         "title": "Review Changes",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(diff)"
       },
       {
-        "command": "intelligents.mergeSession",
+        "command": "harnextai.mergeSession",
         "title": "Merge & Archive Session",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(git-merge)"
       },
       {
-        "command": "intelligents.openWorktree",
+        "command": "harnextai.openWorktree",
         "title": "Open Worktree in New Window",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(empty-window)"
       },
       {
-        "command": "intelligents.deleteHistorySession",
+        "command": "harnextai.deleteHistorySession",
         "title": "Delete Session Transcript",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(trash)"
       },
       {
-        "command": "intelligents.viewTranscript",
+        "command": "harnextai.viewTranscript",
         "title": "View Transcript",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(book)"
       },
       {
-        "command": "intelligents.showMemoryPanel",
+        "command": "harnextai.showMemoryPanel",
         "title": "Show Memory Panel",
-        "category": "Intelligents",
+        "category": "Harnext AI",
         "icon": "$(eye)"
+      },
+      {
+        "command": "harnextai.refreshWorkflow",
+        "title": "Refresh Workflow",
+        "category": "Harnext AI",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "harnextai.triggerWorkflow",
+        "title": "Trigger Workflow",
+        "category": "Harnext AI",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "harnextai.revealWorkflowSession",
+        "title": "Open Session",
+        "category": "Harnext AI",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "harnextai.openIssueOnGitHub",
+        "title": "Open on GitHub",
+        "category": "Harnext AI",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "harnextai.openWorkflowTerminalByIssue",
+        "title": "Open Workflow Terminal",
+        "category": "Harnext AI"
+      },
+      {
+        "command": "harnextai.bootstrapHarness",
+        "title": "Initialize Harness",
+        "category": "Harnext AI",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "harnextai.showHarnessDoctor",
+        "title": "Show Doctor",
+        "category": "Harnext AI",
+        "icon": "$(heart)"
+      },
+      {
+        "command": "harnextai.fixHarnessDoctor",
+        "title": "Fix All (Doctor)",
+        "category": "Harnext AI",
+        "icon": "$(wrench)"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "intelligents.openForm",
+          "command": "harnextai.openForm",
           "when": "false"
         },
         {
-          "command": "intelligents.duplicateAgent",
+          "command": "harnextai.duplicateAgent",
           "when": "false"
         },
         {
-          "command": "intelligents.approveProposal",
+          "command": "harnextai.approveProposal",
           "when": "false"
         },
         {
-          "command": "intelligents.rejectProposal",
+          "command": "harnextai.rejectProposal",
           "when": "false"
         },
         {
-          "command": "intelligents.launchAgent",
+          "command": "harnextai.launchAgent",
           "when": "false"
         },
         {
-          "command": "intelligents.resumeSession",
+          "command": "harnextai.resumeSession",
           "when": "false"
         },
         {
-          "command": "intelligents.revealSession",
+          "command": "harnextai.revealSession",
           "when": "false"
         },
         {
-          "command": "intelligents.archiveSession",
+          "command": "harnextai.archiveSession",
           "when": "false"
         },
         {
-          "command": "intelligents.deleteSession",
+          "command": "harnextai.deleteSession",
           "when": "false"
         },
         {
-          "command": "intelligents.sendMessage",
+          "command": "harnextai.sendMessage",
           "when": "false"
         },
         {
-          "command": "intelligents.reviewSession",
+          "command": "harnextai.reviewSession",
           "when": "false"
         },
         {
-          "command": "intelligents.mergeSession",
+          "command": "harnextai.mergeSession",
           "when": "false"
         },
         {
-          "command": "intelligents.openWorktree",
+          "command": "harnextai.openWorktree",
           "when": "false"
         },
         {
-          "command": "intelligents.deleteHistorySession",
+          "command": "harnextai.deleteHistorySession",
           "when": "false"
         },
         {
-          "command": "intelligents.viewTranscript",
+          "command": "harnextai.viewTranscript",
+          "when": "false"
+        },
+        {
+          "command": "harnextai.triggerWorkflow",
+          "when": "false"
+        },
+        {
+          "command": "harnextai.revealWorkflowSession",
+          "when": "false"
+        },
+        {
+          "command": "harnextai.openIssueOnGitHub",
+          "when": "false"
+        },
+        {
+          "command": "harnextai.openWorkflowTerminalByIssue",
+          "when": "false"
+        },
+        {
+          "command": "harnextai.fixHarnessDoctor",
           "when": "false"
         }
       ],
       "view/title": [
         {
-          "command": "intelligents.refresh",
-          "when": "view == intelligents.agentsView",
+          "command": "harnextai.refresh",
+          "when": "view == harnextai.agentsView",
           "group": "navigation"
+        },
+        {
+          "command": "harnextai.refreshWorkflow",
+          "when": "view == harnextai.workflowView || view == harnextai.workflowIssuesView || view == harnextai.workflowSessionsView",
+          "group": "navigation"
+        },
+        {
+          "command": "harnextai.refresh",
+          "when": "view == harnextai.harnessDoctorView",
+          "group": "navigation"
+        },
+        {
+          "command": "harnextai.fixHarnessDoctor",
+          "when": "view == harnextai.harnessDoctorView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "harnextai.bootstrapHarness",
+          "when": "view == harnextai.harnessDoctorView",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
         {
-          "command": "intelligents.newAgent",
-          "when": "view == intelligents.agentsView && viewItem == category:agents",
+          "command": "harnextai.newAgent",
+          "when": "view == harnextai.agentsView && viewItem == category:agents",
           "group": "inline"
         },
         {
-          "command": "intelligents.newSkill",
-          "when": "view == intelligents.agentsView && viewItem == category:skills",
+          "command": "harnextai.newSkill",
+          "when": "view == harnextai.agentsView && viewItem == category:skills",
           "group": "inline"
         },
         {
-          "command": "intelligents.launchAgent",
-          "when": "view == intelligents.agentsView && viewItem == agent",
+          "command": "harnextai.launchAgent",
+          "when": "view == harnextai.agentsView && viewItem == agent",
           "group": "navigation@1"
         },
         {
-          "command": "intelligents.duplicateAgent",
-          "when": "view == intelligents.agentsView && viewItem == agent",
+          "command": "harnextai.duplicateAgent",
+          "when": "view == harnextai.agentsView && viewItem == agent",
           "group": "modify@1"
         },
         {
-          "command": "intelligents.approveProposal",
-          "when": "view == intelligents.agentsView && viewItem == pendingProposal",
+          "command": "harnextai.approveProposal",
+          "when": "view == harnextai.agentsView && viewItem == pendingProposal",
           "group": "inline@1"
         },
         {
-          "command": "intelligents.rejectProposal",
-          "when": "view == intelligents.agentsView && viewItem == pendingProposal",
+          "command": "harnextai.rejectProposal",
+          "when": "view == harnextai.agentsView && viewItem == pendingProposal",
           "group": "inline@2"
         },
         {
-          "command": "intelligents.newSession",
-          "when": "view == intelligents.agentsView && viewItem == agent",
+          "command": "harnextai.newSession",
+          "when": "view == harnextai.agentsView && viewItem == agent",
           "group": "navigation@2"
         },
         {
-          "command": "intelligents.archiveSession",
-          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "command": "harnextai.archiveSession",
+          "when": "view == harnextai.agentsView && viewItem == liveSession",
           "group": "navigation@1"
         },
         {
-          "command": "intelligents.deleteSession",
-          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "command": "harnextai.deleteSession",
+          "when": "view == harnextai.agentsView && viewItem =~ /^(liveSession|archivedSession)$/",
           "group": "navigation@2"
         },
         {
-          "command": "intelligents.reviewSession",
-          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "command": "harnextai.reviewSession",
+          "when": "view == harnextai.agentsView && viewItem == liveSession",
           "group": "review@1"
         },
         {
-          "command": "intelligents.mergeSession",
-          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "command": "harnextai.mergeSession",
+          "when": "view == harnextai.agentsView && viewItem == liveSession",
           "group": "review@2"
         },
         {
-          "command": "intelligents.sendMessage",
-          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "command": "harnextai.sendMessage",
+          "when": "view == harnextai.agentsView && viewItem == liveSession",
           "group": "session@1"
         },
         {
-          "command": "intelligents.openWorktree",
-          "when": "view == intelligents.agentsView && viewItem == liveSession",
+          "command": "harnextai.openWorktree",
+          "when": "view == harnextai.agentsView && viewItem == liveSession",
           "group": "session@2"
         },
         {
-          "command": "intelligents.deleteSession",
-          "when": "view == intelligents.agentsView && viewItem == archivedSession",
-          "group": "navigation"
-        },
-        {
-          "command": "intelligents.deleteHistorySession",
-          "when": "view == intelligents.agentsView && viewItem == session",
+          "command": "harnextai.deleteHistorySession",
+          "when": "view == harnextai.agentsView && viewItem == session",
           "group": "inline"
         },
         {
-          "command": "intelligents.viewTranscript",
-          "when": "view == intelligents.agentsView && viewItem == session",
+          "command": "harnextai.viewTranscript",
+          "when": "view == harnextai.agentsView && viewItem == session",
           "group": "navigation@1"
         },
         {
-          "command": "intelligents.showMemoryPanel",
-          "when": "view == intelligents.agentsView && viewItem == category:memories",
+          "command": "harnextai.showMemoryPanel",
+          "when": "view == harnextai.agentsView && viewItem == category:memories",
           "group": "inline"
+        },
+        {
+          "command": "harnextai.triggerWorkflow",
+          "when": "view == harnextai.workflowIssuesView && viewItem == githubIssue",
+          "group": "inline@1"
+        },
+        {
+          "command": "harnextai.revealWorkflowSession",
+          "when": "view == harnextai.workflowIssuesView && viewItem == githubIssueWithSession",
+          "group": "inline@1"
+        },
+        {
+          "command": "harnextai.openIssueOnGitHub",
+          "when": "view == harnextai.workflowIssuesView && viewItem =~ /^githubIssue/",
+          "group": "inline@2"
         }
       ]
     }

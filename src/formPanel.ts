@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as crypto from "node:crypto";
+import * as path from "node:path";
 import { readAgentForm, writeAgentForm } from "./agentStore";
 import { readSkillForm, writeSkillForm } from "./skillStore";
 import { readMemoryForm, writeMemoryForm } from "./memoryStore";
@@ -55,8 +56,8 @@ export class FormPanel {
 
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
-        "intelligents.form",
-        "Intelligents",
+        "harnextai.form",
+        "Harnext AI",
         vscode.ViewColumn.Active,
         {
           enableScripts: true,
@@ -89,7 +90,7 @@ export class FormPanel {
 
   private async onMessage(raw: unknown): Promise<void> {
     if (!isWebviewMessage(raw)) {
-      console.warn("intelligents: dropped invalid webview message", raw);
+      console.warn("harnextai: dropped invalid webview message", raw);
       return;
     }
     if (raw.type === "ready") {
@@ -101,6 +102,10 @@ export class FormPanel {
           /* file vanished — leave the webview on its cached state */
         }
       }
+      return;
+    }
+    if (raw.type === "openFile") {
+      await openWorkspaceFile(raw.path);
       return;
     }
     // raw.type === 'save'
@@ -161,7 +166,7 @@ export class FormPanel {
 	<meta http-equiv="Content-Security-Policy" content="${csp}" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link href="${styleUri}" rel="stylesheet" />
-	<title>Intelligents</title>
+	<title>Harnext AI</title>
 </head>
 <body>
 	<main id="root"></main>
@@ -192,4 +197,36 @@ function defaultBudgetFor(filePath: string): number {
 
 function errMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Open a path referenced from form markdown preview. Relative paths resolve
+ * against the first workspace folder; absolute paths open as-is.
+ */
+async function openWorkspaceFile(rawPath: string): Promise<void> {
+  const trimmed = rawPath.trim();
+  if (!trimmed) {
+    return;
+  }
+  let uri: vscode.Uri;
+  if (path.isAbsolute(trimmed) || /^[a-zA-Z]:[\\/]/.test(trimmed)) {
+    uri = vscode.Uri.file(trimmed);
+  } else {
+    const folder = vscode.workspace.workspaceFolders?.[0];
+    if (!folder) {
+      void vscode.window.showErrorMessage(
+        `Cannot open "${trimmed}": no workspace folder is open.`,
+      );
+      return;
+    }
+    uri = vscode.Uri.joinPath(folder.uri, trimmed);
+  }
+  try {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(doc, { preview: true });
+  } catch (err) {
+    void vscode.window.showErrorMessage(
+      `Could not open ${trimmed}: ${errMessage(err)}`,
+    );
+  }
 }

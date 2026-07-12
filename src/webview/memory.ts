@@ -32,7 +32,7 @@ if (saved && typeof saved === "object") {
 window.addEventListener("message", (event: MessageEvent) => {
   const message: unknown = event.data;
   if (!isMemoryPanelHostMessage(message)) {
-    console.warn("intelligents memory: dropped invalid message", message);
+    console.warn("harnextai memory: dropped invalid message", message);
     return;
   }
   current = message.data;

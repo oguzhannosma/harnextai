@@ -31,7 +31,7 @@ export class TranscriptPanel {
 
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
-        "intelligents.transcript",
+        "harnextai.transcript",
         "Transcript",
         vscode.ViewColumn.Active,
         {
@@ -54,7 +54,7 @@ export class TranscriptPanel {
 
   private async onMessage(raw: unknown): Promise<void> {
     if (!isReadyMessage(raw)) {
-      console.warn("intelligents: dropped invalid transcript message", raw);
+      console.warn("harnextai: dropped invalid transcript message", raw);
       return;
     }
     // Webview (re)loaded — re-stream and push the authoritative state.

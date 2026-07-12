@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
-import { promises as fs } from "node:fs";
+import { promises as fs, existsSync } from "node:fs";
 import {
   ChangedFile,
   LiveSession,
   abortMerge,
   addWorktree,
+  addWorktreeForExistingBranch,
   branchExists,
   branchFor,
   currentBranch,
@@ -19,18 +20,28 @@ import {
   isUnderWorktreesDir,
   isUnmergedBranchError,
   isWorkingTreeClean,
-  listWorktreePaths,
   mergeBase,
   mergeNoFf,
   pruneWorktrees,
   quotePromptArg,
-  reconcileRecords,
   removeWorktree,
   repoHasCommits,
   showFileAtRef,
   validateTaskName,
+  worktreeDirExists,
   worktreePathFor,
 } from "./liveSessionStore";
+import { loadHarnessWorkflow } from "./harnessWorkflow";
+import { formatProgressMarkdown } from "./workflowProgress";
+import {
+  WorkflowRuntime,
+  buildContinueCommand,
+  buildRuntimeCommand,
+  issuePrompt,
+  isWorkflowRuntime,
+  runtimeAgentName,
+  runtimeLabel,
+} from "./workflowRuntime";
 import * as path from "node:path";
 
 /**
@@ -41,7 +52,7 @@ import * as path from "node:path";
  * (a plain `file:` URI) so uncommitted changes show, per the Conductor-style
  * behavior the task calls for.
  */
-const DIFF_SCHEME = "intelligents-diff";
+const DIFF_SCHEME = "harnextai-diff";
 
 /**
  * Extension-host wiring for the worktree-per-session lifecycle. Owns the mutable
@@ -52,7 +63,7 @@ const DIFF_SCHEME = "intelligents-diff";
  * Every mutation persists then calls {@link onChange} so the tree repaints.
  */
 
-const STATE_KEY = "intelligents.liveSessions";
+const STATE_KEY = "harnextai.liveSessions";
 
 /** Human word for a `git diff --name-status` status letter (QuickPick hint). */
 function describeStatus(status: string): string {
@@ -156,29 +167,33 @@ export class LiveSessionManager implements LiveSessionQuery {
   }
 
   /**
-   * Reconcile persisted records against `git worktree list` and drop any whose
-   * worktree vanished (removed outside the extension). Silent on git failure —
-   * reconciliation is best-effort enrichment, not a hard gate.
+   * Reconcile persisted records against on-disk worktrees and drop any live
+   * session whose directory was removed outside the extension. Silent on cleanup
+   * failures — reconciliation is best-effort enrichment, not a hard gate.
    */
   async reconcile(): Promise<void> {
-    let paths: string[];
-    try {
-      paths = await listWorktreePaths(this.repoRoot);
-    } catch {
-      return;
-    }
-    // Only live records are backed by a worktree; archived records intentionally
-    // have none, so they are exempt from the worktree-existence reconciliation
-    // and always kept.
     const archived = this.records.filter((r) => r.archived);
     const live = this.records.filter((r) => !r.archived);
-    const keptLive = reconcileRecords(live, paths);
-    if (keptLive.length !== live.length) {
-      this.records = [...keptLive, ...archived];
-      await this.persist();
-      this.onSessionsChanged(this.records);
-      this.onChange();
+    const verified: LiveSession[] = [];
+    const dropped: LiveSession[] = [];
+    for (const record of live) {
+      if (await worktreeDirExists(record.worktreePath)) {
+        verified.push(record);
+      } else {
+        dropped.push(record);
+      }
     }
+    if (dropped.length === 0) {
+      return;
+    }
+    for (const record of dropped) {
+      this.disposeTerminal(record.slug);
+      await this.clearStaleWorktreeRef(record.worktreePath);
+    }
+    this.records = [...verified, ...archived];
+    await this.persist();
+    this.onSessionsChanged(this.records);
+    this.onChange();
   }
 
   /**
@@ -259,6 +274,7 @@ export class LiveSessionManager implements LiveSessionQuery {
       worktreePath,
       createdAt: Date.now(),
       baseBranch,
+      runtime: "claude",
     };
     this.records = [session, ...this.records];
     await this.persist();
@@ -273,8 +289,127 @@ export class LiveSessionManager implements LiveSessionQuery {
   }
 
   /**
-   * Reveal a session: focus its terminal if still open, otherwise relaunch
-   * `claude --continue` in a fresh terminal at the worktree.
+   * Trigger Workflow flow: start an agent-session worktree for a GitHub issue and
+   * launch the chosen runtime's CLI against it. Unlike {@link newSession} this
+   * takes NO input boxes — the slug (`issue-<N>`), branch, and prompt are all
+   * derived from the issue number, and the runtime (Claude Code or Cursor CLI) is
+   * resolved from settings by the caller. The runtime's CLI orchestrates its own
+   * subagents; the extension just opens the terminal.
+   */
+  async startWorkflowFromIssue(
+    issueNumber: number,
+    runtime: WorkflowRuntime,
+    workflowTrigger?: string,
+  ): Promise<void> {
+    // Same unborn-HEAD guard as newSession: `git worktree add -b` would infer
+    // `--orphan` on a commitless repo and leave an un-removable worktree.
+    if (!(await repoHasCommits(this.repoRoot))) {
+      void vscode.window.showErrorMessage(
+        "This repository has no commits yet — make an initial commit before triggering a workflow.",
+      );
+      return;
+    }
+
+    const slug = `issue-${issueNumber}`;
+    const existing = this.records.find((r) => r.slug === slug);
+    if (existing) {
+      if (existing.archived) {
+        void vscode.window.showWarningMessage(
+          `Issue #${issueNumber} has an archived session (branch "${existing.branch}"). Delete it first to start fresh.`,
+        );
+        return;
+      }
+      if (await worktreeDirExists(existing.worktreePath)) {
+        this.reveal(existing);
+        return;
+      }
+      // Folder was removed outside the extension (or never created) — drop the
+      // stale record and recreate the worktree below.
+      this.disposeTerminal(existing.slug);
+      await this.clearStaleWorktreeRef(existing.worktreePath);
+      await this.dropRecord(existing.slug);
+    }
+
+    const agentName = runtimeAgentName(runtime);
+    const branch = branchFor(agentName, slug);
+    const worktreePath = worktreePathFor(this.repoRoot, slug);
+
+    let baseBranch: string | undefined;
+    try {
+      baseBranch = await currentBranch(this.repoRoot);
+    } catch {
+      baseBranch = undefined;
+    }
+    if (!(await this.ensureWorktree(worktreePath, branch))) {
+      return;
+    }
+
+    const wf = await loadHarnessWorkflow(this.repoRoot);
+    const firstStep =
+      wf.ok && wf.workflow.steps.length > 0
+        ? wf.workflow.steps[0].step
+        : "researcher";
+    try {
+      await fs.writeFile(
+        path.join(worktreePath, "progress.md"),
+        formatProgressMarkdown({
+          issue: issueNumber,
+          step: firstStep,
+          stepIndex: 0,
+          status: "active",
+          note: "Workflow started — orchestrator will advance steps.",
+        }),
+        "utf8",
+      );
+    } catch (err) {
+      void vscode.window.showWarningMessage(
+        `Worktree created but progress.md could not be written: ${gitErrorMessage(err)}`,
+      );
+    }
+
+    const session: LiveSession = {
+      slug,
+      agentName,
+      branch,
+      worktreePath,
+      createdAt: Date.now(),
+      baseBranch,
+      runtime,
+    };
+    this.records = [session, ...this.records];
+    await this.persist();
+    this.onSessionsChanged(this.records);
+
+    const command = buildRuntimeCommand(
+      runtime,
+      issuePrompt(issueNumber, workflowTrigger),
+    );
+    this.launchTerminal(session, command);
+    this.onChange();
+    void vscode.window.showInformationMessage(
+      `Started ${runtimeLabel(runtime)} on issue #${issueNumber} in worktree "${slug}".`,
+    );
+  }
+
+  /**
+   * Focus the session terminal (relaunch if needed) and optionally type a short
+   * nudge into the TUI. Used by Workflow Continue / attention actions.
+   */
+  nudge(session: LiveSession, text?: string): void {
+    this.reveal(session);
+    if (!text) {
+      return;
+    }
+    const terminal = this.terminals.get(session.slug);
+    if (terminal) {
+      terminal.show();
+      terminal.sendText(text, true);
+    }
+  }
+
+  /**
+   * Reveal a session: focus its terminal if still open, otherwise relaunch the
+   * matching runtime continue command in a fresh terminal at the worktree.
    */
   reveal(session: LiveSession): void {
     const existing = this.terminals.get(session.slug);
@@ -282,7 +417,11 @@ export class LiveSessionManager implements LiveSessionQuery {
       existing.show();
       return;
     }
-    this.launchTerminal(session, "claude --continue");
+    const runtime: WorkflowRuntime =
+      session.runtime && isWorkflowRuntime(session.runtime)
+        ? session.runtime
+        : "claude";
+    this.launchTerminal(session, buildContinueCommand(runtime));
   }
 
   /**
@@ -328,7 +467,7 @@ export class LiveSessionManager implements LiveSessionQuery {
   }
 
   /**
-   * Diff review (`intelligents.reviewSession`): show what the session's branch
+   * Diff review (`harnextai.reviewSession`): show what the session's branch
    * changed relative to its base, using VS Code's native diff rather than a
    * custom viewer. Computes the merge-base of base↔branch in the MAIN repo (both
    * branches are visible there), lists changed files in a QuickPick, and opens
@@ -431,7 +570,7 @@ export class LiveSessionManager implements LiveSessionQuery {
   }
 
   /**
-   * Merge & Archive (`intelligents.mergeSession`): one-click completion of the
+   * Merge & Archive (`harnextai.mergeSession`): one-click completion of the
    * loop. Checks every precondition with a clear error before touching anything,
    * confirms, then `git merge --no-ff` the session branch into the base (with the
    * main repo already on the base — verified, never checked out behind the user's
@@ -548,16 +687,25 @@ export class LiveSessionManager implements LiveSessionQuery {
    * branch (safe `-d`, escalating to `-D` only after an explicit "work will be
    * LOST" confirmation), then drop the record. On an ARCHIVED session: the
    * worktree is already gone, so just delete the branch and drop the record.
+   *
+   * Pass `{ skipConfirm: true }` when the caller already confirmed (e.g. bulk
+   * delete). Unmerged-branch force prompts still apply — those are a separate
+   * safety gate about losing unmerged work.
    */
-  async delete(session: LiveSession): Promise<void> {
+  async delete(
+    session: LiveSession,
+    options: { skipConfirm?: boolean } = {},
+  ): Promise<void> {
     if (session.archived) {
-      const confirm = await vscode.window.showWarningMessage(
-        `Delete archived session "${session.slug}"?\n\nThis deletes branch "${session.branch}" and removes the record permanently.`,
-        { modal: true },
-        "Delete",
-      );
-      if (confirm !== "Delete") {
-        return;
+      if (!options.skipConfirm) {
+        const confirm = await vscode.window.showWarningMessage(
+          `Delete archived session "${session.slug}"?\n\nThis deletes branch "${session.branch}" and removes the record permanently.`,
+          { modal: true },
+          "Delete",
+        );
+        if (confirm !== "Delete") {
+          return;
+        }
       }
       if (!(await this.deleteBranchInteractive(session.branch))) {
         return; // user declined force-delete of unmerged branch — record kept
@@ -566,13 +714,15 @@ export class LiveSessionManager implements LiveSessionQuery {
       return;
     }
 
-    const confirm = await vscode.window.showWarningMessage(
-      `Delete session "${session.slug}"?\n\nThis removes the worktree at ${session.worktreePath} AND deletes branch "${session.branch}". This cannot be undone.`,
-      { modal: true },
-      "Delete",
-    );
-    if (confirm !== "Delete") {
-      return;
+    if (!options.skipConfirm) {
+      const confirm = await vscode.window.showWarningMessage(
+        `Delete session "${session.slug}"?\n\nThis removes the worktree at ${session.worktreePath} AND deletes branch "${session.branch}". This cannot be undone.`,
+        { modal: true },
+        "Delete",
+      );
+      if (confirm !== "Delete") {
+        return;
+      }
     }
 
     this.disposeTerminal(session.slug);
@@ -595,6 +745,32 @@ export class LiveSessionManager implements LiveSessionQuery {
       return;
     }
     await this.dropRecord(session.slug);
+  }
+
+  /**
+   * Delete one or more sessions. Single-item keeps the detailed per-session
+   * confirm copy; multi-select confirms once then deletes each with
+   * `skipConfirm`.
+   */
+  async deleteMany(sessions: LiveSession[]): Promise<void> {
+    if (sessions.length === 0) {
+      return;
+    }
+    if (sessions.length === 1) {
+      await this.delete(sessions[0]!);
+      return;
+    }
+    const confirm = await vscode.window.showWarningMessage(
+      `Delete ${sessions.length} sessions?\n\nThis removes worktrees and/or branches for each selected session. This cannot be undone.`,
+      { modal: true },
+      "Delete",
+    );
+    if (confirm !== "Delete") {
+      return;
+    }
+    for (const session of sessions) {
+      await this.delete(session, { skipConfirm: true });
+    }
   }
 
   /**
@@ -780,6 +956,12 @@ export class LiveSessionManager implements LiveSessionQuery {
 
   /** Create, track, show, and run a command in a session terminal. */
   private launchTerminal(session: LiveSession, command: string): void {
+    if (!existsSync(session.worktreePath)) {
+      void vscode.window.showErrorMessage(
+        `Cannot open session "${session.slug}": worktree directory does not exist (${session.worktreePath}).`,
+      );
+      return;
+    }
     const terminal = vscode.window.createTerminal({
       name: `${session.agentName}: ${session.slug}`,
       cwd: session.worktreePath,
@@ -787,6 +969,61 @@ export class LiveSessionManager implements LiveSessionQuery {
     this.terminals.set(session.slug, terminal);
     terminal.show();
     terminal.sendText(command);
+  }
+
+  /**
+   * Create a worktree at {@link worktreePath}, creating {@link branch} when it
+   * does not exist or re-attaching when the branch was kept from a prior session.
+   */
+  private async ensureWorktree(
+    worktreePath: string,
+    branch: string,
+  ): Promise<boolean> {
+    try {
+      await pruneWorktrees(this.repoRoot);
+    } catch {
+      // Non-fatal: prune is best-effort before add.
+    }
+    try {
+      if (await branchExists(this.repoRoot, branch)) {
+        await addWorktreeForExistingBranch(this.repoRoot, worktreePath, branch);
+      } else {
+        await addWorktree(this.repoRoot, worktreePath, branch);
+      }
+      return true;
+    } catch (err) {
+      void vscode.window.showErrorMessage(
+        `git worktree add failed: ${gitErrorMessage(err)}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Drop a stale git worktree registration (and any leftover directory) after the
+   * folder was removed outside the extension.
+   */
+  private async clearStaleWorktreeRef(worktreePath: string): Promise<void> {
+    try {
+      await pruneWorktrees(this.repoRoot);
+    } catch {
+      // Continue to force-remove attempt.
+    }
+    try {
+      await removeWorktree(this.repoRoot, worktreePath, true);
+    } catch {
+      // Path may already be pruned or never registered.
+    }
+    if (
+      (await worktreeDirExists(worktreePath)) &&
+      isUnderWorktreesDir(this.repoRoot, worktreePath)
+    ) {
+      try {
+        await fs.rm(worktreePath, { recursive: true, force: true });
+      } catch {
+        // Non-fatal before recreate.
+      }
+    }
   }
 
   private persist(): Thenable<void> {

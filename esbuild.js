@@ -42,6 +42,9 @@ const webviewOptionsList = [
 	webviewBundle('src/webview/main.ts', 'media/webview.js'),
 	webviewBundle('src/webview/transcript.ts', 'media/transcript.js'),
 	webviewBundle('src/webview/memory.ts', 'media/memory.js'),
+	webviewBundle('src/webview/workflow.ts', 'media/workflow.js'),
+	webviewBundle('src/webview/sessions.ts', 'media/sessions.js'),
+	webviewBundle('src/webview/doctor.ts', 'media/doctor.js'),
 ];
 
 async function main() {

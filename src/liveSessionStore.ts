@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { access } from "node:fs/promises";
 import * as path from "node:path";
 import { promisify } from "node:util";
 
@@ -43,6 +44,12 @@ export interface LiveSession {
    * fall back to the repo's current HEAD branch (or `master`) at review time.
    */
   readonly baseBranch?: string;
+  /**
+   * Which CLI started this session (`claude` | `cursor`). Used by `reveal` to
+   * relaunch the matching continue/resume command. Absent on older records —
+   * callers default to Claude Code.
+   */
+  readonly runtime?: "claude" | "cursor";
 }
 
 /**
@@ -114,14 +121,33 @@ export function validateTaskName(value: string): string | undefined {
   return undefined;
 }
 
-/** Sibling-of-repo directory that holds all worktrees: `<repoParent>/intelligents-worktrees`. */
+/**
+ * In-repo directory that holds all agent-session worktrees:
+ * `<repoRoot>/.harness/agent-session-works`. Gitignored (see `.gitignore`) so
+ * the worktrees never show up as untracked changes in the main repo. Kept inside
+ * the repo (rather than a sibling `harnextai-worktrees`) so everything an
+ * agent session needs lives under one project root.
+ */
 export function worktreesDir(repoRoot: string): string {
-  return path.join(path.dirname(repoRoot), "intelligents-worktrees");
+  return path.join(repoRoot, ".harness", "agent-session-works");
 }
 
 /** Absolute path for a session's worktree: `<worktreesDir>/<slug>`. */
 export function worktreePathFor(repoRoot: string, slug: string): string {
   return path.join(worktreesDir(repoRoot), slug);
+}
+
+/**
+ * Parse `issue-<N>` slugs into the GitHub issue number. Returns `undefined` for
+ * non-issue session slugs (manual New Session tasks).
+ */
+export function issueNumberFromSlug(slug: string): number | undefined {
+  const match = /^issue-(\d+)$/.exec(slug);
+  if (!match) {
+    return undefined;
+  }
+  const n = Number.parseInt(match[1]!, 10);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 /** Branch name for a session: `<agentName>/<slug>`. */
@@ -255,6 +281,38 @@ export async function addWorktree(
     "-b",
     branch,
   ]);
+}
+
+/**
+ * `git worktree add <worktreePath> <branch>` for a branch that already exists.
+ * Use when re-attaching a worktree after the directory was removed but the branch
+ * was kept.
+ */
+export async function addWorktreeForExistingBranch(
+  repoRoot: string,
+  worktreePath: string,
+  branch: string,
+): Promise<void> {
+  await pExecFile("git", [
+    "-C",
+    repoRoot,
+    "worktree",
+    "add",
+    worktreePath,
+    branch,
+  ]);
+}
+
+/** True when {@link worktreePath} exists on disk (best-effort `access`). */
+export async function worktreeDirExists(
+  worktreePath: string,
+): Promise<boolean> {
+  try {
+    await access(worktreePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

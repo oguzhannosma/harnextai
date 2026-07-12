@@ -72,7 +72,7 @@ export type TreeNode =
   | ArchivedGroupNode
   | PendingNode;
 
-/** Payload passed to the `intelligents.openForm` command (see extension.ts). */
+/** Payload passed to the `harnextai.openForm` command (see extension.ts). */
 export interface OpenFormArg {
   readonly kind: FormKind;
   readonly filePath: string;
@@ -314,7 +314,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.contextValue = "agent";
     item.resourceUri = vscode.Uri.file(agent.filePath);
     item.command = {
-      command: "intelligents.openForm",
+      command: "harnextai.openForm",
       title: "Edit Agent",
       arguments: [
         { kind: "agent", filePath: agent.filePath } satisfies OpenFormArg,
@@ -339,7 +339,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.contextValue = "skill";
     item.resourceUri = vscode.Uri.file(skill.filePath);
     item.command = {
-      command: "intelligents.openForm",
+      command: "harnextai.openForm",
       title: "Edit Skill",
       arguments: [
         { kind: "skill", filePath: skill.filePath } satisfies OpenFormArg,
@@ -358,7 +358,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.contextValue = "memory";
     item.resourceUri = vscode.Uri.file(memory.filePath);
     item.command = {
-      command: "intelligents.openForm",
+      command: "harnextai.openForm",
       title: "Edit Memory",
       arguments: [
         { kind: "memory", filePath: memory.filePath } satisfies OpenFormArg,
@@ -383,7 +383,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.iconPath = new vscode.ThemeIcon("comment-discussion");
     item.contextValue = "session";
     item.command = {
-      command: "intelligents.resumeSession",
+      command: "harnextai.resumeSession",
       title: "Resume Session",
       arguments: [session.sessionId],
     };
@@ -413,7 +413,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.iconPath = badge.icon;
     item.contextValue = "liveSession";
     item.command = {
-      command: "intelligents.revealSession",
+      command: "harnextai.revealSession",
       title: "Open Session",
       arguments: [node],
     };

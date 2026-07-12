@@ -33,7 +33,7 @@ export class MemoryPanelView {
   async open(): Promise<void> {
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
-        "intelligents.memory",
+        "harnextai.memory",
         "Live Memory",
         vscode.ViewColumn.Active,
         {
@@ -57,7 +57,7 @@ export class MemoryPanelView {
 
   private async onMessage(raw: unknown): Promise<void> {
     if (!isReadyMessage(raw)) {
-      console.warn("intelligents: dropped invalid memory-panel message", raw);
+      console.warn("harnextai: dropped invalid memory-panel message", raw);
       return;
     }
     await this.push();

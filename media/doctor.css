@@ -1,0 +1,169 @@
+/* Harness Doctor sidebar — VS Code theme tokens */
+
+body {
+  margin: 0;
+  padding: 12px 10px 20px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+  line-height: 1.4;
+}
+
+.hint {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.88em;
+  margin: 6px 0 0;
+}
+
+.empty {
+  padding: 8px 4px;
+}
+
+.empty-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+.doctor-header {
+  margin-bottom: 14px;
+}
+
+.doctor-title {
+  margin: 0 0 4px;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.doctor-summary {
+  margin: 0 0 10px;
+  font-size: 0.88em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--vscode-button-border, transparent);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  font: inherit;
+  font-size: 0.9em;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.btn--primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.btn--primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.group-title {
+  margin: 0 0 8px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.finding-list,
+.fix-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.finding {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border));
+  background: var(--vscode-editor-background);
+}
+
+.finding--error {
+  border-left: 3px solid var(--vscode-errorForeground);
+}
+
+.finding--warn {
+  border-left: 3px solid var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.finding--info {
+  border-left: 3px solid var(--vscode-textLink-foreground);
+}
+
+.finding-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.finding-severity {
+  font-size: 0.78em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.finding-category {
+  font-size: 0.78em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.finding-badge {
+  font-size: 0.72em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(
+    in srgb,
+    var(--vscode-textLink-foreground) 18%,
+    transparent
+  );
+  color: var(--vscode-textLink-foreground);
+}
+
+.finding-message {
+  margin: 0;
+  font-size: 0.9em;
+}
+
+.fix-log {
+  margin-bottom: 14px;
+  padding: 10px;
+  border-radius: 6px;
+  background: color-mix(
+    in srgb,
+    var(--vscode-textLink-foreground) 8%,
+    var(--vscode-editor-background)
+  );
+}
+
+.fix-list li {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+}

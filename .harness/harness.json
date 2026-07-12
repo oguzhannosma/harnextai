@@ -8,6 +8,52 @@
     "antigravity": false
   },
   "agents": ["developer", "indexer", "researcher", "reviewer"],
+  "workflow": {
+    "trigger": "user gives a ticket number — main thread launches the researcher immediately (gh issue view <id>)",
+    "steps": [
+      {
+        "step": "researcher",
+        "action": "investigates the ticket, reports findings"
+      },
+      {
+        "step": "user-gate",
+        "action": "user reads findings and decides whether/how to proceed — nothing is built before this"
+      },
+      {
+        "step": "developer",
+        "action": "creates bug/<ticket-id>/<short-name> or feature/<ticket-id>/<short-name> branch and implements; localizer runs alongside when new user-facing strings appear"
+      },
+      {
+        "step": "user-gate",
+        "action": "user tests manually and relays fixes to the developer; loop with developer until the user says okay"
+      },
+      {
+        "step": "qa-tester",
+        "action": "after the user's okay: writes tests covering the change and improves/updates existing tests it touches; loops with developer if a product defect blocks TESTS: GREEN"
+      },
+      {
+        "step": "reviewer",
+        "action": "REVIEW: RED -> developer fixes -> reviewer again; REVIEW: GREEN -> security starts"
+      },
+      {
+        "step": "security",
+        "action": "VERDICT: RED -> developer fixes, then back through reviewer and security; VERDICT: GREEN -> double green"
+      },
+      {
+        "step": "developer",
+        "action": "after double green: verifies git identity is the repo owner's (never an AI/Claude identity), commits (short plain message) on the ticket branch — no push yet"
+      },
+      {
+        "step": "indexer",
+        "action": "runs automatically right after that commit — refreshes docs/codebase-index.md and .harness/project-index/ and commits the sync on the same ticket branch"
+      },
+      {
+        "step": "developer",
+        "action": "pushes the ticket branch (both commits in one push) and opens the PR — no AI fingerprints in commit author, message, PR title/body, or comments"
+      },
+      { "step": "user", "action": "merges the PR" }
+    ]
+  },
   "settings": {
     "model": "inherit",
     "personalMemoryBudget": 2200,
@@ -15,8 +61,8 @@
   },
   "x-harness-architect": {
     "project": {
-      "name": "intelligents",
-      "description": "VS Code extension (TypeScript): agentic CRM for AI coding agents, integrating Claude Code and GitHub Copilot",
+      "name": "harnextai",
+      "description": "VS Code / Cursor extension (TypeScript): harness for AI coding agents — agents, skills, memory, Doctor, and ticket workflows",
       "stack": ["typescript", "vscode-extension", "esbuild"]
     },
     "agentModels": {

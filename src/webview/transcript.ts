@@ -33,7 +33,7 @@ if (saved && typeof saved === "object") {
 window.addEventListener("message", (event: MessageEvent) => {
   const message: unknown = event.data;
   if (!isTranscriptHostMessage(message)) {
-    console.warn("intelligents transcript: dropped invalid message", message);
+    console.warn("harnextai transcript: dropped invalid message", message);
     return;
   }
   current = message.data;

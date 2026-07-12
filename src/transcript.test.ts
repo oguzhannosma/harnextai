@@ -130,7 +130,7 @@ const PROJECT_DIR = path.join(
   os.homedir(),
   ".claude",
   "projects",
-  "C--Users-osmao-Desktop-projects-intelligents",
+  "C--Users-osmao-Desktop-projects-harnextai",
 );
 
 test("real transcripts parse within the cap and stream (no whole-file slurp)", async (t) => {
